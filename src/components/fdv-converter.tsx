@@ -372,7 +372,7 @@ export const FdvConverter: React.FC = () => {
       if (savePath) {
         const result = await invoke('create_rainfall', {
           outputPath: savePath,
-          rainfallColumn: rainfallColumn,
+          rainfallCol: rainfallColumn,
         })
         console.log("FDV created successfully:", result)
         toast({
@@ -621,14 +621,14 @@ export const FdvConverter: React.FC = () => {
             <div className="flex justify-between">
               <Button
                   disabled={isProcessing || !rainfallColumn}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className="col-span-1"
               >
                 Rainfall Totals
               </Button>
               <Button
                   onClick={handleCreateRainfall}
                   disabled={isProcessing || !rainfallColumn}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  className="col-span-1"
               >
                 Create Rainfall
               </Button>
