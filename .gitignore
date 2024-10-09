@@ -24,4 +24,3 @@ dist-ssr
 *.sw?
 .vscode
 package-lock.json
-node_modules
