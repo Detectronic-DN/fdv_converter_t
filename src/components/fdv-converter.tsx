@@ -117,7 +117,7 @@ export const FdvConverter: React.FC = () => {
       resetState();
 
       try {
-        await invoke("clear_file_processor_state");
+        await invoke("clear_command_handler_state");
         console.log("FileProcessor state reset successfully");
       } catch (error) {
         console.error("Failed to reset FileProcessor state:", error);
@@ -334,8 +334,8 @@ export const FdvConverter: React.FC = () => {
       })
 
       if (savePath) {
-        const result = await invoke('create_fdv', {
-          outputFilepath: savePath,
+        const result = await invoke('create_fdv_flow', {
+          outputPath: savePath,
           depthCol: depthColumn,
           velocityCol: velocityColumn === 'none' ? null : velocityColumn,
           pipeShape: pipeShape,

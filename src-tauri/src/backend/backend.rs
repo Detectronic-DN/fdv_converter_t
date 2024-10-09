@@ -6,6 +6,7 @@ use polars::prelude::*;
 use serde_json::json;
 use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
 use crate::utils::logger::clear_logs;
+use crate::fdv::fdv_creator::FDVFlowCreator;
 
 pub struct CommandHandler {
     filepath: PathBuf,
@@ -62,7 +63,8 @@ impl CommandHandler {
                 log::info!("Gaps: {}", self.gaps);
                 log::info!("Range: {} to {}",self.start_timestamp, self.end_timestamp);
                 log::info!("Monitor type: {}", self.monitor_type);
-                println!("first 5 rows in a df {}", self.data_frame.clone().unwrap().head(Some(5)));
+
+
                 Ok(result.to_string())
             },
             Err(e) => {
@@ -161,5 +163,61 @@ impl CommandHandler {
     pub fn reset(&mut self) {
         *self = CommandHandler::new();
         clear_logs();
+    }
+
+    pub fn create_fdv_flow(
+        &mut self,
+        output_path: &str,
+        depth_col: &str,
+        velocity_col: &str,
+        pipe_shape: &str,
+        pipe_size: &str,
+    ) -> Result<String, String> {
+        let df = self.data_frame.as_ref().ok_or("No data frame available")?;
+        println!("first 5 rows in a fdv {}", self.data_frame.clone().unwrap().head(Some(5)));
+        // Create a new FDVFlowCreator
+        let mut fdv_creator = FDVFlowCreator::new();
+
+        // Set up column names
+        let mut col_names = HashMap::new();
+        col_names.insert("timestamp".to_string(), self.time_col.clone().unwrap_or_default());
+        col_names.insert("depth".to_string(), depth_col.to_string());
+        col_names.insert("velocity".to_string(), velocity_col.to_string());
+
+        fdv_creator.set_parameters(
+            df.clone(),
+            &self.site_name,
+            &self.start_timestamp,
+            &self.end_timestamp,
+            self.interval.num_minutes(),
+            output_path,
+            &col_names,
+            pipe_shape,
+            pipe_size,
+        ).map_err(|e| format!("Error setting FDV flow parameters: {}", e))?;
+
+        fdv_creator.create_fdv_flow()
+            .map_err(|e| format!("Error creating FDV flow: {}", e))?;
+
+        let (depth_null, velocity_null) = fdv_creator.get_null_readings();
+
+        let result = json!({
+            "success": true,
+            "message": "FDV flow creation initiated",
+            "outputPath": output_path,
+            "depthColumn": depth_col,
+            "velocityColumn": velocity_col,
+            "pipeShape": pipe_shape,
+            "pipeSize": pipe_size,
+            "nullReadings": {
+                "depth": depth_null,
+                "velocity": velocity_null
+            }
+        });
+
+        log::info!("FDV flow created successfully. Output: {}", output_path);
+        log::info!("Null readings: Depth: {}, Velocity: {}", depth_null, velocity_null);
+
+        Ok(result.to_string())
     }
 }

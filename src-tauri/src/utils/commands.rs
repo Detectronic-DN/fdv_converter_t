@@ -48,3 +48,18 @@ pub fn create_app_state() -> AppState {
         command_handler: Mutex::new(CommandHandler::new()),
     }
 }
+
+#[tauri::command]
+pub fn create_fdv_flow(
+    state: State<'_, AppState>,
+    output_path: String,
+    depth_col: String,
+    velocity_col: String,
+    pipe_shape: String,
+    pipe_size: String,
+) -> Result<String, String> {
+    let mut command_handler = state.command_handler.lock().map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
+
+    // Call the create_fdv_flow method and return its result
+    command_handler.create_fdv_flow(&output_path, &depth_col, &velocity_col, &pipe_shape, &pipe_size)
+}

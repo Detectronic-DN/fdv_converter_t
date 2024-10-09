@@ -30,7 +30,8 @@ pub fn run() {
                 set_console_logging,
                 set_frontend_logging,
                 update_site_name,
-                update_site_id
+                update_site_id,
+                create_fdv_flow
             ]
         )
         .run(tauri::generate_context!())

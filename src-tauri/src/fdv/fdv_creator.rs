@@ -33,7 +33,7 @@ pub struct FDVFlowCreator {
     header_lines: Vec<String>,
     start_ts: Option<NaiveDateTime>,
     end_ts: Option<NaiveDateTime>,
-    interval: Option<f64>,
+    interval: Option<i64>,
     output_file: Option<BufWriter<File>>,
     depth_col: Option<String>,
     velocity_col: Option<String>,
@@ -93,6 +93,7 @@ impl FDVFlowCreator {
 
     pub fn set_dataframe(&mut self, df: DataFrame) {
         self.df = Some(df);
+        println!("first 5 rows in a fdv {}", self.df.clone().unwrap().head(Some(5)));
     }
 
     pub fn open_output_file(&mut self, output_file: &str) -> Result<(), FDVFlowCreatorError> {
@@ -111,7 +112,7 @@ impl FDVFlowCreator {
         Ok(())
     }
 
-    pub fn set_interval(&mut self, interval: f64) {
+    pub fn set_interval(&mut self, interval: i64) {
         self.interval = Some(interval);
     }
 
@@ -120,7 +121,7 @@ impl FDVFlowCreator {
             for line in &self.header_lines {
                 writeln!(writer, "{}", line)?;
             }
-            let interval_in_minutes = self.interval.unwrap() as i64;
+            let interval_in_minutes = self.interval.unwrap();
             let start_str = self.start_ts.unwrap().format("%Y%m%d%H%M").to_string();
             let end_str = self.end_ts.unwrap().format("%Y%m%d%H%M").to_string();
             writeln!(writer, "{} {}   {}", start_str, end_str, interval_in_minutes)?;
@@ -152,6 +153,8 @@ impl FDVFlowCreator {
         let velocity_col = col_names.get("velocity").map(|s| s.as_str()).ok_or_else(|| FDVFlowCreatorError::InvalidParameter("Velocity column name not provided".to_string()))?;
 
         self.value_count = 1;
+        println!("Depth col: {}", depth_col);
+        println!("Velocity col: {}", velocity_col);
 
         let df = self.df.as_mut().ok_or_else(|| FDVFlowCreatorError::InvalidParameter("DataFrame not set".to_string()))?;
 
@@ -248,7 +251,7 @@ impl FDVFlowCreator {
         site_name: &str,
         starting_time: &str,
         ending_time: &str,
-        interval: f64,
+        interval: i64,
         output_file: &str,
         col_names: &HashMap<String, String>,
         pipe_type: &str,
