@@ -1,7 +1,7 @@
 use calamine::{ open_workbook, Reader, Xlsx };
 use chrono::{ Duration, NaiveDate, NaiveDateTime, NaiveTime };
 use csv::ReaderBuilder;
-use log::{ error, info};
+use log::{ error, info };
 use polars::prelude::*;
 use rayon::prelude::*;
 use regex::Regex;
@@ -191,7 +191,6 @@ impl FileProcessor {
         &mut self,
         file_data: &mut FileData
     ) -> Result<(), FileProcessorError> {
-
         let timestamp_column = self.identify_timestamp_column(file_data)?;
         let column_index = file_data.headers
             .iter()
@@ -228,6 +227,7 @@ impl FileProcessor {
             .cloned()
             .ok_or(FileProcessorError::TimestampColumnNotFound)
     }
+
     pub fn identify_timestamp_format(
         &self,
         file_data: &FileData,
@@ -247,7 +247,7 @@ impl FileProcessor {
             .position(|h| h == timestamp_column)
             .ok_or(FileProcessorError::TimestampColumnNotFound)?;
         let mut format_counts = HashMap::new();
-        let max_rows_to_check = 100.min(file_data.data.len());
+        let max_rows_to_check = (100).min(file_data.data.len());
         for row in file_data.data.iter().take(max_rows_to_check) {
             if let Some(timestamp) = row.get(column_index) {
                 for format in &timestamp_formats {
@@ -264,6 +264,7 @@ impl FileProcessor {
             .map(|(format, _)| format.to_string())
             .ok_or(FileProcessorError::TimestampFormatNotIdentified)
     }
+
     pub fn parse_dates(
         &self,
         file_data: &mut FileData,
@@ -283,6 +284,7 @@ impl FileProcessor {
         });
         Ok(())
     }
+
     fn get_parsed_timestamps(
         &self,
         file_data: &FileData,
@@ -306,6 +308,7 @@ impl FileProcessor {
         }
         Ok(timestamps)
     }
+
     pub fn get_start_end_timestamps(
         &self,
         file_data: &FileData,
@@ -325,6 +328,7 @@ impl FileProcessor {
             end.format("%Y-%m-%d %H:%M:%S").to_string(),
         ))
     }
+
     pub fn calculate_interval(
         &self,
         file_data: &FileData,
@@ -348,6 +352,7 @@ impl FileProcessor {
                 FileProcessorError::ParseError("Could not determine a mode interval".to_string())
             })
     }
+
     pub fn create_timestamp_series(
         &mut self,
         file_data: &FileData,
@@ -406,6 +411,7 @@ impl FileProcessor {
         };
         Ok((new_file_data, gap_count))
     }
+
     fn extract_columns(
         &self,
         pattern: &Regex,
@@ -428,6 +434,7 @@ impl FileProcessor {
             })
             .collect()
     }
+
     pub fn get_column_names_and_indices(
         &mut self,
         file_name: &str
@@ -466,6 +473,7 @@ impl FileProcessor {
         self.determine_monitor_type(file_name, &column_mapping);
         Ok(column_mapping)
     }
+
     fn determine_monitor_type(
         &mut self,
         file_name: &str,
@@ -475,27 +483,31 @@ impl FileProcessor {
         self.monitor_type = self.site_info.get_monitor_type().to_string();
     }
 
-    pub fn process_file(&mut self, file_path: &str) -> Result<ProcessedFileData, FileProcessorError> {
+    pub fn process_file(
+        &mut self,
+        file_path: &str
+    ) -> Result<ProcessedFileData, FileProcessorError> {
         let mut file_data = self.read_file(file_path)?;
         let timestamp_column = self.identify_timestamp_column(&file_data)?;
         self.time_col = Some(timestamp_column.clone());
         let timestamp_format = self.identify_timestamp_format(&file_data, &timestamp_column)?;
         self.parse_dates(&mut file_data, &timestamp_column, &timestamp_format)?;
-        let (file_data_with_series, gap_count) =
-            self.create_timestamp_series(&file_data, &timestamp_column, "%Y-%m-%d %H:%M:%S")?;
+        let (file_data_with_series, gap_count) = self.create_timestamp_series(
+            &file_data,
+            &timestamp_column,
+            "%Y-%m-%d %H:%M:%S"
+        )?;
 
         let mut series_vec: Vec<Series> = Vec::new();
         for (i, header) in file_data_with_series.headers.iter().enumerate() {
             let series = if header == &timestamp_column {
-                let timestamps: Vec<NaiveDateTime> = file_data_with_series
-                    .data
+                let timestamps: Vec<NaiveDateTime> = file_data_with_series.data
                     .iter()
                     .map(|row| NaiveDateTime::parse_from_str(&row[i], "%Y-%m-%d %H:%M:%S").unwrap())
                     .collect();
                 Series::new(header.into(), timestamps)
             } else {
-                let values: Vec<f64> = file_data_with_series
-                    .data
+                let values: Vec<f64> = file_data_with_series.data
                     .iter()
                     .map(|row| row[i].parse::<f64>().unwrap_or(f64::NAN))
                     .collect();
@@ -511,7 +523,7 @@ impl FileProcessor {
         let (start, end) = self.get_start_end_timestamps(
             &file_data_with_series,
             &timestamp_column,
-            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M:%S"
         )?;
 
         // Extract column names and indices
@@ -523,7 +535,6 @@ impl FileProcessor {
             .extract_site_info(file_path, &column_mapping)
             .map_err(|e| FileProcessorError::ParseError(e.to_string()))?;
 
-
         let processed_data = ProcessedFileData {
             df,
             start_timestamp: start,
@@ -534,7 +545,6 @@ impl FileProcessor {
             monitor_type: self.monitor_type.clone(),
             site_id: self.site_info.get_site_id().into(),
             site_name: self.site_info.get_site_name().into(),
-
         };
 
         // Update internal state
@@ -545,7 +555,11 @@ impl FileProcessor {
         Ok(processed_data)
     }
 
-    fn calculate_interval_from_df(&self, df: &DataFrame, time_col: &str) -> Result<Duration, FileProcessorError> {
+    fn calculate_interval_from_df(
+        &self,
+        df: &DataFrame,
+        time_col: &str
+    ) -> Result<Duration, FileProcessorError> {
         let time_series = df.column(time_col)?;
         let mut timestamps: Vec<NaiveDateTime> = time_series
             .datetime()?
@@ -567,40 +581,41 @@ impl FileProcessor {
             .into_iter()
             .max_by_key(|&(_, count)| count)
             .map(|(interval, _)| interval)
-            .ok_or_else(|| FileProcessorError::ParseError("Could not determine a mode interval".to_string()))
+            .ok_or_else(||
+                FileProcessorError::ParseError("Could not determine a mode interval".to_string())
+            )
     }
 
     pub fn update_timestamps(
         &mut self,
         start_time: &str,
-        end_time: &str,
+        end_time: &str
     ) -> Result<UpdatedTimestampData, FileProcessorError> {
         // Check if DataFrame is loaded
         println!("Updating timestamps from {} to {}", start_time, end_time);
-        let df = self.df.as_mut().ok_or(FileProcessorError::ParseError(
-            "No data loaded. Cannot update timestamps.".to_string(),
-        ))?;
+        let df = self.df
+            .as_mut()
+            .ok_or(
+                FileProcessorError::ParseError(
+                    "No data loaded. Cannot update timestamps.".to_string()
+                )
+            )?;
 
         // Check if time column is identified
-        let time_col = self
-            .time_col
-            .as_ref()
-            .ok_or(FileProcessorError::TimestampColumnNotFound)?;
+        let time_col = self.time_col.as_ref().ok_or(FileProcessorError::TimestampColumnNotFound)?;
 
         // Parse the new start and end times
-        let new_start =
-            NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S").map_err(|_| {
-                FileProcessorError::ParseError("Failed to parse start timestamp".to_string())
-            })?;
-        let new_end =
-            NaiveDateTime::parse_from_str(end_time, "%Y-%m-%d %H:%M:%S").map_err(|_| {
-                FileProcessorError::ParseError("Failed to parse end timestamp".to_string())
-            })?;
+        let new_start = NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S").map_err(|_| {
+            FileProcessorError::ParseError("Failed to parse start timestamp".to_string())
+        })?;
+        let new_end = NaiveDateTime::parse_from_str(end_time, "%Y-%m-%d %H:%M:%S").map_err(|_| {
+            FileProcessorError::ParseError("Failed to parse end timestamp".to_string())
+        })?;
 
         if new_start >= new_end {
-            return Err(FileProcessorError::ParseError(
-                "Start time must be before end time".to_string(),
-            ));
+            return Err(
+                FileProcessorError::ParseError("Start time must be before end time".to_string())
+            );
         }
 
         // Filter the DataFrame based on the new time range
@@ -611,10 +626,10 @@ impl FileProcessor {
             .map(|opt_dt| {
                 opt_dt
                     .map(|dt| {
-                        dt.and_utc().timestamp_nanos_opt()
-                            >= new_start.and_utc().timestamp_nanos_opt()
-                            && dt.and_utc().timestamp_nanos_opt()
-                            <= new_end.and_utc().timestamp_nanos_opt()
+                        dt.and_utc().timestamp_nanos_opt() >=
+                            new_start.and_utc().timestamp_nanos_opt() &&
+                            dt.and_utc().timestamp_nanos_opt() <=
+                                new_end.and_utc().timestamp_nanos_opt()
                     })
                     .unwrap_or(false)
             })
@@ -623,9 +638,9 @@ impl FileProcessor {
         let filtered_df = df.filter(&mask)?;
 
         if filtered_df.height() == 0 {
-            return Err(FileProcessorError::ParseError(
-                "No data in the specified time range".to_string(),
-            ));
+            return Err(
+                FileProcessorError::ParseError("No data in the specified time range".to_string())
+            );
         }
 
         // Update start and end timestamps
@@ -644,7 +659,5 @@ impl FileProcessor {
             interval: self.interval.unwrap(),
             row_count: self.df.as_ref().unwrap().height(),
         })
-
     }
-
 }
