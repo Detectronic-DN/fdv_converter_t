@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -321,6 +321,42 @@ export const FdvConverter: React.FC = () => {
     setUsername(newUsername);
   }, []);
 
+
+  const handleCreateFdv = async () => {
+    try {
+      const suggestedFileName = `${processedData?.siteId || 'output'}.fdv`
+      const savePath = await save({
+        filters: [{
+          name: 'FDV File',
+          extensions: ['fdv']
+        }],
+        defaultPath: suggestedFileName
+      })
+
+      if (savePath) {
+        const result = await invoke('create_fdv', {
+          outputFilepath: savePath,
+          depthCol: depthColumn,
+          velocityCol: velocityColumn === 'none' ? null : velocityColumn,
+          pipeShape: pipeShape,
+          pipeSize: pipeSize || ''
+        })
+        console.log("FDV created successfully:", result)
+        toast({
+          title: "FDV Created",
+          description: `FDV file has been created successfully at ${savePath}`,
+        })
+      }
+    } catch (error) {
+      console.error('Error creating FDV:', error)
+      toast({
+        title: "Error",
+        description: `Failed to create FDV file: ${(error as Error).message}`,
+        variant: "destructive",
+      })
+    }
+  }
+
   const isFormValid = useMemo(() => {
     return (
       siteDetails.siteId.trim() !== "" &&
@@ -329,17 +365,13 @@ export const FdvConverter: React.FC = () => {
       siteDetails.endTimestamp !== "" &&
       selectedFile !== null &&
       depthColumn !== "" &&
-      velocityColumn !== "" &&
-      pipeShape !== "" &&
-      pipeSize.trim() !== ""
+      pipeShape !== ""
     );
   }, [
     siteDetails,
     selectedFile,
     depthColumn,
-    velocityColumn,
     pipeShape,
-    pipeSize,
   ]);
 
   return (
@@ -530,7 +562,13 @@ export const FdvConverter: React.FC = () => {
               aria-label="Pipe Size"
             />
             <Button className="col-span-1">Interim Reports</Button>
-            <Button className="col-span-1" disabled={!isFormValid}>Create FDV</Button>
+            <Button
+              className="col-span-1"
+              disabled={!isFormValid}
+              onClick={handleCreateFdv}
+            >
+              Create FDV
+            </Button>
           </div>  
         </TabsContent>
         <TabsContent value="rainfall">
