@@ -77,6 +77,7 @@ export const FdvConverter: React.FC = () => {
   const [processedData, setProcessedData] = useState<ProcessedFileData | null>(
     null
   );
+  const [rainfallColumn, setRainfallColumn] = useState<string>("")
   const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
 
   const { toast } = useToast();
@@ -357,6 +358,38 @@ export const FdvConverter: React.FC = () => {
     }
   }
 
+  const handleCreateRainfall = async () => {
+    try {
+      const suggestedFileName = `${processedData?.siteId || 'output'}.r`
+      const savePath = await save({
+        filters: [{
+          name: 'Rainfall File',
+          extensions: ['r']
+        }],
+        defaultPath: suggestedFileName
+      })
+
+      if (savePath) {
+        const result = await invoke('create_rainfall', {
+          outputPath: savePath,
+          rainfallColumn: rainfallColumn,
+        })
+        console.log("FDV created successfully:", result)
+        toast({
+          title: "Rainfall Rainfall",
+          description: `FDV file has been created successfully at ${savePath}`,
+        })
+      }
+    } catch (error) {
+      console.error('Error creating Rainfall Rainfall:', error)
+      toast({
+        title: "Error",
+        description: `Failed to create Rainfall Rainfall: ${(error as Error).message}`,
+        variant: "destructive",
+      })
+    }
+  }
+
   const isFormValid = useMemo(() => {
     return (
       siteDetails.siteId.trim() !== "" &&
@@ -572,7 +605,35 @@ export const FdvConverter: React.FC = () => {
           </div>  
         </TabsContent>
         <TabsContent value="rainfall">
-          Rainfall content (To be implemented)
+          <div className="grid grid-cols-1 gap-4 mt-4">
+            <Select value={rainfallColumn} onValueChange={setRainfallColumn}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select rainfall column"/>
+              </SelectTrigger>
+              <SelectContent>
+                {allColumns.map(([columnName, index]) => (
+                    <SelectItem key={`${columnName}-${index}`} value={columnName}>
+                      {columnName}
+                    </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-between">
+              <Button
+                  disabled={isProcessing || !rainfallColumn}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                Rainfall Totals
+              </Button>
+              <Button
+                  onClick={handleCreateRainfall}
+                  disabled={isProcessing || !rainfallColumn}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Create Rainfall
+              </Button>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="r3-calculator">
           R3 Calculator content (To be implemented)
@@ -589,13 +650,13 @@ export const FdvConverter: React.FC = () => {
         <CardContent>
           <div className="h-40 bg-muted rounded-md p-2 overflow-auto">
             {logs.map((log, index) => (
-              <div key={index} className={`${getLogColor(log.level)}`}>
-                {log.message}
-              </div>
+                <div key={index} className={`${getLogColor(log.level)}`}>
+                  {log.message}
+                </div>
             ))}
           </div>
         </CardContent>
       </Card>
-    </div >
+    </div>
   );
 };

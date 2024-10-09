@@ -2,11 +2,13 @@ use std::option::Option;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use chrono::Duration;
+use log::log;
 use polars::prelude::*;
 use serde_json::json;
 use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
 use crate::utils::logger::clear_logs;
 use crate::fdv::fdv_creator::FDVFlowCreator;
+use crate::fdv::rainfall_creator::FDVRainfallCreator;
 
 pub struct CommandHandler {
     filepath: PathBuf,
@@ -215,6 +217,46 @@ impl CommandHandler {
 
         log::info!("FDV flow created successfully. Output: {}", output_path);
         log::info!("Null readings: Depth: {}, Velocity: {}", depth_null, velocity_null);
+
+        Ok(result.to_string())
+    }
+
+    pub fn create_rainfall(
+        &mut self,
+        output_path: &str,
+        rainfall_col: &str
+    ) -> Result<String, String> {
+        let df = self.data_frame.as_ref().ok_or("No data frame available")?;
+        let mut rainfall_creator = FDVRainfallCreator::new();
+        let mut col_names = HashMap::new();
+        col_names.insert("timestamp".to_string(), self.time_col.clone().unwrap_or_default());
+        col_names.insert("rainfall".to_string(), rainfall_col.to_string());
+
+        rainfall_creator.set_parameters(
+            df.clone(),
+            &self.site_name,
+            &self.start_timestamp,
+            &self.end_timestamp,
+            self.interval.num_minutes(),
+            output_path,
+            &col_names
+        ).map_err(|e| format!("Error setting Rainfall parameter: {}", e))?;
+
+        rainfall_creator.create_fdv_rainfall()
+        .map_err(|e| format!("Error creating FDV flow: {}", e))?;
+
+        let null_readings = rainfall_creator.get_null_readings();
+
+        let result = json!({
+            "success": true,
+            "message": "Rainfall creation initiated",
+            "outputPath": output_path,
+            "rainfallColumn": rainfall_col,
+            "nullReadings": null_readings
+        });
+
+        log::info!("Rainfall creation successfully. Output: {}", output_path);
+        log::info!("Null readings: {}", null_readings);
 
         Ok(result.to_string())
     }

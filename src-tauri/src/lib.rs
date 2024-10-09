@@ -31,7 +31,8 @@ pub fn run() {
                 set_frontend_logging,
                 update_site_name,
                 update_site_id,
-                create_fdv_flow
+                create_fdv_flow,
+                create_rainfall
             ]
         )
         .run(tauri::generate_context!())

@@ -63,3 +63,14 @@ pub fn create_fdv_flow(
     // Call the create_fdv_flow method and return its result
     command_handler.create_fdv_flow(&output_path, &depth_col, &velocity_col, &pipe_shape, &pipe_size)
 }
+
+#[tauri::command]
+pub fn create_rainfall(
+    state: State<'_, AppState>,
+    output_path: String,
+    rainfall_col: String,
+) -> Result<String, String> {
+    let mut command_handler = state.command_handler.lock().map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
+
+    command_handler.create_rainfall(&output_path, &rainfall_col)
+}
