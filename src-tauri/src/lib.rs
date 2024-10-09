@@ -1,12 +1,9 @@
-mod logger;
-mod file_processor;
 mod backend;
-mod commands;
-mod site_info;
+mod utils;
 
-use commands::*;
+use utils::commands::*;
 use log::LevelFilter;
-use logger::{ get_recent_logs, set_console_logging, set_frontend_logging, Logger };
+use utils::logger::{get_recent_logs, set_console_logging, set_frontend_logging, Logger};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

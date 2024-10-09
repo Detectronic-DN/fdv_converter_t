@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use chrono::Duration;
 use polars::prelude::*;
 use serde_json::json;
-use crate::file_processor::{FileProcessor, ProcessedFileData};
-use crate::logger::clear_logs;
+use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
+use crate::utils::logger::clear_logs;
 
 pub struct CommandHandler {
     filepath: PathBuf,

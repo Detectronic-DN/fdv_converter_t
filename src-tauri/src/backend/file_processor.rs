@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use thiserror::Error;
-use crate::site_info::SiteInfo;
+use crate::backend::site_info::SiteInfo;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileData {

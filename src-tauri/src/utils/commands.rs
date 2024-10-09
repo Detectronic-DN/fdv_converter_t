@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 use tauri::State;
-use crate::backend::CommandHandler;
+use crate::backend::backend::CommandHandler;
 
 pub struct AppState {
     command_handler: Mutex<CommandHandler>,
