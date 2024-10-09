@@ -247,7 +247,7 @@ impl FileProcessor {
             .position(|h| h == timestamp_column)
             .ok_or(FileProcessorError::TimestampColumnNotFound)?;
         let mut format_counts = HashMap::new();
-        let max_rows_to_check = (100).min(file_data.data.len());
+        let max_rows_to_check = 100.min(file_data.data.len());
         for row in file_data.data.iter().take(max_rows_to_check) {
             if let Some(timestamp) = row.get(column_index) {
                 for format in &timestamp_formats {
@@ -592,7 +592,6 @@ impl FileProcessor {
         end_time: &str
     ) -> Result<UpdatedTimestampData, FileProcessorError> {
         // Check if DataFrame is loaded
-        println!("Updating timestamps from {} to {}", start_time, end_time);
         let df = self.df
             .as_mut()
             .ok_or(

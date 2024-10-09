@@ -112,7 +112,6 @@ impl CommandHandler {
                 });
 
                 log::info!("Timestamps updated. New range: {} to {}", formatted_start, formatted_end);
-                println!("New Updated Df {}", self.data_frame.clone().unwrap().head(Some(5)));
                 Ok(result.to_string())
             },
             Err(e) => {
@@ -174,7 +173,6 @@ impl CommandHandler {
         pipe_size: &str,
     ) -> Result<String, String> {
         let df = self.data_frame.as_ref().ok_or("No data frame available")?;
-        println!("first 5 rows in a fdv {}", self.data_frame.clone().unwrap().head(Some(5)));
         // Create a new FDVFlowCreator
         let mut fdv_creator = FDVFlowCreator::new();
 

@@ -93,7 +93,6 @@ impl FDVFlowCreator {
 
     pub fn set_dataframe(&mut self, df: DataFrame) {
         self.df = Some(df);
-        println!("first 5 rows in a fdv {}", self.df.clone().unwrap().head(Some(5)));
     }
 
     pub fn open_output_file(&mut self, output_file: &str) -> Result<(), FDVFlowCreatorError> {
@@ -153,8 +152,6 @@ impl FDVFlowCreator {
         let velocity_col = col_names.get("velocity").map(|s| s.as_str()).ok_or_else(|| FDVFlowCreatorError::InvalidParameter("Velocity column name not provided".to_string()))?;
 
         self.value_count = 1;
-        println!("Depth col: {}", depth_col);
-        println!("Velocity col: {}", velocity_col);
 
         let df = self.df.as_mut().ok_or_else(|| FDVFlowCreatorError::InvalidParameter("DataFrame not set".to_string()))?;
 
