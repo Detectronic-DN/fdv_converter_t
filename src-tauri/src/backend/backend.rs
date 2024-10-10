@@ -2,13 +2,13 @@ use std::option::Option;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use chrono::Duration;
-use log::log;
 use polars::prelude::*;
 use serde_json::json;
 use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
 use crate::utils::logger::clear_logs;
 use crate::fdv::fdv_creator::FDVFlowCreator;
 use crate::fdv::rainfall_creator::FDVRainfallCreator;
+use crate::calculations::r3_calculator::r3_calculator;
 
 pub struct CommandHandler {
     filepath: PathBuf,
@@ -259,5 +259,26 @@ impl CommandHandler {
         log::info!("Null readings: {}", null_readings);
 
         Ok(result.to_string())
+    }
+    pub fn calculate_r3(&self, width: f64, height: f64, egg_form: &str) -> f64 {
+        let egg_form_value = match egg_form {
+            "Egg Type 1" => 1,
+            "Egg Type 2" => 2,
+            _ => {
+                log::error!("Unknown egg form: {}", egg_form);
+                return -1.0;
+            }
+        };
+
+        match r3_calculator(width, height, egg_form_value) {
+            Ok(r3_value) => {
+                log::info!("R3 value calculated successfully: {}", r3_value);
+                r3_value
+            },
+            Err(e) => {
+                log::error!("Error calculating R3 value: {:?}", e);
+                -1.0
+            }
+        }
     }
 }

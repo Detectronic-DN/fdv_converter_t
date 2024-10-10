@@ -14,7 +14,6 @@ pub fn r3_calculator(w: f64, h: f64, egg_form: i32) -> Result<f64, R3CalculatorE
     let r1: f64 = (h - w) / if egg_form == 1 { 2.0 } else { 4.0 };
     let h2: f64 = h - r2;
     let mut r3: f64 = h;
-    let mut diff: f64 = 1.0;
 
     for _ in 0..max_iterations {
         let offset: f64 = r3 - r2;
@@ -25,7 +24,7 @@ pub fn r3_calculator(w: f64, h: f64, egg_form: i32) -> Result<f64, R3CalculatorE
         }
 
         let offset_a: f64 = square_term.sqrt();
-        diff = offset - offset_a;
+        let diff = offset - offset_a;
 
         if diff.abs() <= precision {
             return Ok(r3);

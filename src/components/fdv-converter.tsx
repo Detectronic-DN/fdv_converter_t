@@ -78,6 +78,11 @@ export const FdvConverter: React.FC = () => {
     null
   );
   const [rainfallColumn, setRainfallColumn] = useState<string>("")
+  const [eggType, setEggType] = useState("Egg Type 1");
+  const [pipeWidth, setPipeWidth] = useState("");
+  const [pipeHeight, setPipeHeight] = useState("");
+  const [r3Value, setR3Value] = useState("");
+  const [_, setActiveTab] = useState("fdv-converter");
   const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
 
   const { toast } = useToast();
@@ -390,6 +395,74 @@ export const FdvConverter: React.FC = () => {
     }
   }
 
+  const handleCalculateR3 = useCallback(async () => {
+    if (!pipeWidth || !pipeHeight) {
+      setError("Please fill in all required fields");
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const result = await invoke<string>("calculate_r3", {
+        width: parseFloat(pipeWidth),
+        height: parseFloat(pipeHeight),
+        eggForm: eggType
+      });
+
+      const numericResult = parseFloat(result);
+
+      if (isNaN(numericResult) || numericResult === -1) {
+        setError("R3 calculation failed");
+        toast({
+          title: "Error",
+          description: "R3 calculation failed",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const formattedR3 = numericResult.toFixed(2);
+      setR3Value(formattedR3);
+      toast({
+        title: "R3 Calculated",
+        description: `The R3 value has been calculated: ${formattedR3}`,
+      });
+    } catch (error) {
+      const errorMessage = `Failed to calculate R3: ${(error as Error).message}`;
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  }, [eggType, pipeWidth, pipeHeight, toast]);
+
+  const handleUseR3 = useCallback(() => {
+    if (pipeWidth && pipeHeight && r3Value) {
+      const newPipeSize = `${pipeWidth},${pipeHeight},${r3Value}`;
+      setPipeSize(newPipeSize);
+      setActiveTab('fdv-converter');
+      toast({
+        title: "R3 Value Used",
+        description: "The R3 value has been applied to the pipe size.",
+      });
+    } else {
+      setError('Please calculate R3 value first');
+      toast({
+        title: "Error",
+        description: "Please calculate R3 value first",
+        variant: "destructive",
+      });
+    }
+  }, [pipeWidth, pipeHeight, r3Value]);
+
   const isFormValid = useMemo(() => {
     return (
       siteDetails.siteId.trim() !== "" &&
@@ -636,7 +709,51 @@ export const FdvConverter: React.FC = () => {
           </div>
         </TabsContent>
         <TabsContent value="r3-calculator">
-          R3 Calculator content (To be implemented)
+          <Card>
+            <CardHeader>
+              <CardTitle>R3 Calculator</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Select value={eggType} onValueChange={setEggType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Egg Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                    <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                    type="number"
+                    placeholder="Pipe Width (mm)"
+                    value={pipeWidth}
+                    onChange={(e) => setPipeWidth(e.target.value)}
+                />
+                <Input
+                    type="number"
+                    placeholder="Pipe Height (mm)"
+                    value={pipeHeight}
+                    onChange={(e) => setPipeHeight(e.target.value)}
+                />
+                <Input
+                    type="text"
+                    placeholder="R3 Value (mm)"
+                    value={r3Value}
+                    readOnly
+                />
+                <Button onClick={handleUseR3} className="col-span-1">
+                  Use R3 value
+                </Button>
+                <Button onClick={handleCalculateR3} className="col-span-1">
+                  Calculate R3
+                </Button>
+              </div>
+              {error && (
+                  <p className="text-red-500 mt-2">{error}</p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="batch-processing">
           Batch Processing content (To be implemented)

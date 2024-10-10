@@ -74,3 +74,21 @@ pub fn create_rainfall(
 
     command_handler.create_rainfall(&output_path, &rainfall_col)
 }
+
+#[tauri::command]
+pub fn calculate_r3(
+    state: State<'_, AppState>,
+    width: f64,
+    height: f64,
+    egg_form: String,
+) -> Result<String, String> {
+    let command_handler = state.command_handler.lock().map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
+
+    let r3_value = command_handler.calculate_r3(width, height, &egg_form);
+
+    if r3_value == -1.0 {
+        Err("Failed to calculate R3 value".to_string())
+    } else {
+        Ok(r3_value.to_string())
+    }
+}
