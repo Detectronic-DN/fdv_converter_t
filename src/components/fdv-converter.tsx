@@ -27,6 +27,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import { path } from "@tauri-apps/api";
+import { Spinner } from "@/components/spinner";
 
 interface SiteDetails {
   siteId: string;
@@ -64,6 +65,7 @@ interface ProcessedFileData {
 }
 
 export const FdvConverter: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false)
   const [siteDetails, setSiteDetails] = useState<SiteDetails>({
     siteId: "",
     siteName: "",
@@ -87,11 +89,10 @@ export const FdvConverter: React.FC = () => {
   const [pipeWidth, setPipeWidth] = useState("");
   const [pipeHeight, setPipeHeight] = useState("");
   const [r3Value, setR3Value] = useState("");
-  const [_, setActiveTab] = useState("fdv-converter");
   const [batchFiles, setBatchFiles] = useState<BatchFileDetails[]>([]);
   const [batchProcessing, setBatchProcessing] = useState(false);
 
-  
+
   const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
 
   const resetState = useCallback(() => {
@@ -112,6 +113,7 @@ export const FdvConverter: React.FC = () => {
   }, []);
 
   const handleFileChange = useCallback(async () => {
+    setIsLoading(true);
     try {
       const selected = await open({
         multiple: false,
@@ -146,6 +148,8 @@ export const FdvConverter: React.FC = () => {
         }`
       );
       setSelectedFile(null);
+    } finally {
+      setIsLoading(false);
     }
   }, [resetState]);
 
@@ -154,9 +158,10 @@ export const FdvConverter: React.FC = () => {
       setError("No file selected. Please select a file first.");
       return;
     }
-
+    
     try {
       setIsProcessing(true);
+      setIsLoading(true);
       setError(null);
 
       const result = await invoke<string>("process_file", {
@@ -179,10 +184,12 @@ export const FdvConverter: React.FC = () => {
       );
     } finally {
       setIsProcessing(false);
+      setIsLoading(false);
     }
   }, [selectedFile]);
 
   const handleUpdateSiteId = useCallback(async () => {
+    setIsLoading(true);
     try {
       const result = await invoke<string>("update_site_id", {
         siteId: siteDetails.siteId,
@@ -199,9 +206,13 @@ export const FdvConverter: React.FC = () => {
         }`
       );
     }
+    finally {
+      setIsLoading(false);
+    }
   }, [siteDetails.siteId]);
 
   const handleUpdateSiteName = useCallback(async () => {
+    setIsLoading(true);
     try {
       const result = await invoke<string>("update_site_name", {
         siteName: siteDetails.siteName,
@@ -219,11 +230,15 @@ export const FdvConverter: React.FC = () => {
         }`
       );
     }
+    finally {
+      setIsLoading(false);
+    }
   }, [siteDetails.siteName]);
 
   const handleUpdateTimestamps = useCallback(async () => {
     try {
       setIsProcessing(true);
+      setIsLoading(true);
       setError(null);
 
       const result = await invoke<string>("update_timestamps", {
@@ -254,6 +269,7 @@ export const FdvConverter: React.FC = () => {
       );
     } finally {
       setIsProcessing(false);
+      setIsLoading(false);
     }
   }, [siteDetails.startTimestamp, siteDetails.endTimestamp]);
 
@@ -313,6 +329,7 @@ export const FdvConverter: React.FC = () => {
 
 
   const handleCreateFdv = async () => {
+    setIsLoading(true);
     try {
       const suggestedFileName = `${processedData?.siteId || 'output'}.fdv`
       const savePath = await save({
@@ -335,10 +352,13 @@ export const FdvConverter: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating FDV:', error)
+    } finally {
+      setIsLoading(false);
     }
   }
 
   const handleCreateRainfall = async () => {
+    setIsLoading(true);
     try {
       const suggestedFileName = `${processedData?.siteId || 'output'}.r`
       const savePath = await save({
@@ -357,6 +377,8 @@ export const FdvConverter: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating Rainfall Rainfall:', error)
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -394,7 +416,6 @@ export const FdvConverter: React.FC = () => {
     if (pipeWidth && pipeHeight && r3Value) {
       const newPipeSize = `${pipeWidth},${pipeHeight},${r3Value}`;
       setPipeSize(newPipeSize);
-      setActiveTab('fdv-converter');
     } else {
       setError('Please calculate R3 value first');
     }
@@ -442,9 +463,10 @@ export const FdvConverter: React.FC = () => {
       setError("No files selected for batch processing.");
       return;
     }
-
+    
     try {
       setBatchProcessing(true);
+      setIsLoading(true);
       setError(null);
 
       const outputDir = await open({
@@ -475,6 +497,7 @@ export const FdvConverter: React.FC = () => {
       );
     } finally {
       setBatchProcessing(false);
+      setIsLoading(false);
     }
   }, [batchFiles]);
 
@@ -496,359 +519,362 @@ export const FdvConverter: React.FC = () => {
   ]);
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">FDV Converter</h1>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2">
-              <span>{username}</span>
-              <Avatar>
-                <AvatarFallback>{username[0]}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>User Settings</SheetTitle>
-              <SheetDescription>Update your username here.</SheetDescription>
-            </SheetHeader>
-            <div className="py-4">
-              <Input
-                placeholder="Enter new username"
-                value={username}
-                onChange={(e) => handleUpdateUsername(e.target.value)}
-                aria-label="Username"
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+    <>
+      <Spinner isLoading={isLoading} />
+      <div className="container mx-auto p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">FDV Converter</h1>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <span>{username}</span>
+                <Avatar>
+                  <AvatarFallback>{username[0]}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>User Settings</SheetTitle>
+                <SheetDescription>Update your username here.</SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <Input
+                  placeholder="Enter new username"
+                  value={username}
+                  onChange={(e) => handleUpdateUsername(e.target.value)}
+                  aria-label="Username"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
-      <div className="flex mb-4">
-        <Input
-          type="text"
-          placeholder="Choose File"
-          className="mr-2"
-          value={selectedFile ? selectedFile.name : ""}
-          readOnly
-          aria-label="Selected file"
-        />
-        <Button
-          variant="outline"
-          className="mr-2"
-          onClick={handleFileChange}
-          disabled={isProcessing}
-        >
-          Select File
-        </Button>
-        <Button
-          variant="default"
-          onClick={handleProcessFile}
-          disabled={isProcessing || !selectedFile}
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            "Process File"
-          )}
-        </Button>
-      </div>
-
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Site Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              placeholder="Site ID"
-              value={siteDetails.siteId}
-              onChange={(e) =>
-                setSiteDetails((prev) => ({ ...prev, siteId: e.target.value }))
-              }
-              onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteId)}
-              aria-label="Site ID"
-            />
-            <Input
-              placeholder="Site Name"
-              value={siteDetails.siteName}
-              onChange={(e) =>
-                setSiteDetails((prev) => ({
-                  ...prev,
-                  siteName: e.target.value,
-                }))
-              }
-              onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteName)}
-              aria-label="Site Name"
-            />
-            <Input
-              type="datetime-local"
-              placeholder="Start Timestamp"
-              value={siteDetails.startTimestamp}
-              onChange={(e) =>
-                handleUpdateSiteDetails("startTimestamp", e.target.value)
-              }
-              aria-label="Start Timestamp"
-            />
-            <Input
-              type="datetime-local"
-              placeholder="End Timestamp"
-              value={siteDetails.endTimestamp}
-              onChange={(e) =>
-                handleUpdateSiteDetails("endTimestamp", e.target.value)
-              }
-              aria-label="End Timestamp"
-            />
-          </div>
+        <div className="flex mb-4">
+          <Input
+            type="text"
+            placeholder="Choose File"
+            className="mr-2"
+            value={selectedFile ? selectedFile.name : ""}
+            readOnly
+            aria-label="Selected file"
+          />
           <Button
-            className="mt-4"
-            onClick={handleUpdateTimestamps}
-            disabled={isProcessing || !processedData}
+            variant="outline"
+            className="mr-2"
+            onClick={handleFileChange}
+            disabled={isProcessing}
+          >
+            Select File
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleProcessFile}
+            disabled={isProcessing || !selectedFile}
           >
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
+                Processing...
               </>
             ) : (
-              "Update Timestamps"
+              "Process File"
             )}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Tabs defaultValue="fdv-converter">
-        <TabsList>
-          <TabsTrigger value="fdv-converter">FDV Converter</TabsTrigger>
-          <TabsTrigger value="rainfall">Rainfall</TabsTrigger>
-          <TabsTrigger value="r3-calculator">R3 Calculator</TabsTrigger>
-          <TabsTrigger value="batch-processing">Batch Processing</TabsTrigger>
-        </TabsList>
-        <TabsContent value="fdv-converter">
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <Select value={depthColumn} onValueChange={setDepthColumn}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select depth column" />
-              </SelectTrigger>
-              <SelectContent>
-                {allColumns.map(([columnName, index]) => (
-                  <SelectItem key={`${columnName}-${index}`} value={columnName}>
-                    {columnName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={velocityColumn} onValueChange={setVelocityColumn}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select velocity column" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {allColumns.map(([columnName, index]) => (
-                  <SelectItem key={`${columnName}-${index}`} value={columnName}>
-                    {columnName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={pipeShape} onValueChange={setPipeShape}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pipe Shape" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Circular">Circular</SelectItem>
-                <SelectItem value="Rectangular">Rectangular</SelectItem>
-                <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
-                <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
-                <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
-                <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Enter pipe size"
-              value={pipeSize}
-              onChange={(e) => setPipeSize(e.target.value)}
-              aria-label="Pipe Size"
-            />
-            <Button className="col-span-1">Interim Reports</Button>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>Site Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                placeholder="Site ID"
+                value={siteDetails.siteId}
+                onChange={(e) =>
+                  setSiteDetails((prev) => ({ ...prev, siteId: e.target.value }))
+                }
+                onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteId)}
+                aria-label="Site ID"
+              />
+              <Input
+                placeholder="Site Name"
+                value={siteDetails.siteName}
+                onChange={(e) =>
+                  setSiteDetails((prev) => ({
+                    ...prev,
+                    siteName: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteName)}
+                aria-label="Site Name"
+              />
+              <Input
+                type="datetime-local"
+                placeholder="Start Timestamp"
+                value={siteDetails.startTimestamp}
+                onChange={(e) =>
+                  handleUpdateSiteDetails("startTimestamp", e.target.value)
+                }
+                aria-label="Start Timestamp"
+              />
+              <Input
+                type="datetime-local"
+                placeholder="End Timestamp"
+                value={siteDetails.endTimestamp}
+                onChange={(e) =>
+                  handleUpdateSiteDetails("endTimestamp", e.target.value)
+                }
+                aria-label="End Timestamp"
+              />
+            </div>
             <Button
-              className="col-span-1"
-              disabled={!isFormValid}
-              onClick={handleCreateFdv}
+              className="mt-4"
+              onClick={handleUpdateTimestamps}
+              disabled={isProcessing || !processedData}
             >
-              Create FDV
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Timestamps"
+              )}
             </Button>
-          </div>  
-        </TabsContent>
-        <TabsContent value="rainfall">
-          <div className="grid grid-cols-1 gap-4 mt-4">
-            <Select value={rainfallColumn} onValueChange={setRainfallColumn}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select rainfall column"/>
-              </SelectTrigger>
-              <SelectContent>
-                {allColumns.map(([columnName, index]) => (
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="fdv-converter">
+          <TabsList>
+            <TabsTrigger value="fdv-converter">FDV Converter</TabsTrigger>
+            <TabsTrigger value="rainfall">Rainfall</TabsTrigger>
+            <TabsTrigger value="r3-calculator">R3 Calculator</TabsTrigger>
+            <TabsTrigger value="batch-processing">Batch Processing</TabsTrigger>
+          </TabsList>
+          <TabsContent value="fdv-converter">
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Select value={depthColumn} onValueChange={setDepthColumn}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select depth column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allColumns.map(([columnName, index]) => (
                     <SelectItem key={`${columnName}-${index}`} value={columnName}>
                       {columnName}
                     </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex justify-between">
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={velocityColumn} onValueChange={setVelocityColumn}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select velocity column" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {allColumns.map(([columnName, index]) => (
+                    <SelectItem key={`${columnName}-${index}`} value={columnName}>
+                      {columnName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={pipeShape} onValueChange={setPipeShape}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pipe Shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Circular">Circular</SelectItem>
+                  <SelectItem value="Rectangular">Rectangular</SelectItem>
+                  <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                  <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                  <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
+                  <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Enter pipe size"
+                value={pipeSize}
+                onChange={(e) => setPipeSize(e.target.value)}
+                aria-label="Pipe Size"
+              />
+              <Button className="col-span-1">Interim Reports</Button>
               <Button
+                className="col-span-1"
+                disabled={!isFormValid}
+                onClick={handleCreateFdv}
+              >
+                Create FDV
+              </Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="rainfall">
+            <div className="grid grid-cols-1 gap-4 mt-4">
+              <Select value={rainfallColumn} onValueChange={setRainfallColumn}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rainfall column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allColumns.map(([columnName, index]) => (
+                    <SelectItem key={`${columnName}-${index}`} value={columnName}>
+                      {columnName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex justify-between">
+                <Button
                   disabled={isProcessing || !rainfallColumn}
                   className="col-span-1"
-              >
-                Rainfall Totals
-              </Button>
-              <Button
+                >
+                  Rainfall Totals
+                </Button>
+                <Button
                   onClick={handleCreateRainfall}
                   disabled={isProcessing || !rainfallColumn}
                   className="col-span-1"
-              >
-                Create Rainfall
-              </Button>
+                >
+                  Create Rainfall
+                </Button>
+              </div>
             </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="r3-calculator">
-          <Card>
-            <CardHeader>
-              <CardTitle>R3 Calculator</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <Select value={eggType} onValueChange={setEggType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Egg Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
-                    <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
+          </TabsContent>
+          <TabsContent value="r3-calculator">
+            <Card>
+              <CardHeader>
+                <CardTitle>R3 Calculator</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select value={eggType} onValueChange={setEggType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Egg Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                      <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
                     type="number"
                     placeholder="Pipe Width (mm)"
                     value={pipeWidth}
                     onChange={(e) => setPipeWidth(e.target.value)}
-                />
-                <Input
+                  />
+                  <Input
                     type="number"
                     placeholder="Pipe Height (mm)"
                     value={pipeHeight}
                     onChange={(e) => setPipeHeight(e.target.value)}
-                />
-                <Input
+                  />
+                  <Input
                     type="text"
                     placeholder="R3 Value (mm)"
                     value={r3Value}
                     readOnly
-                />
-                <Button onClick={handleUseR3} className="col-span-1">
-                  Use R3 value
-                </Button>
-                <Button onClick={handleCalculateR3} className="col-span-1">
-                  Calculate R3
-                </Button>
-              </div>
-              {error && (
+                  />
+                  <Button onClick={handleUseR3} className="col-span-1">
+                    Use R3 value
+                  </Button>
+                  <Button onClick={handleCalculateR3} className="col-span-1">
+                    Calculate R3
+                  </Button>
+                </div>
+                {error && (
                   <p className="text-red-500 mt-2">{error}</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="batch-processing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Batch Processing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Button onClick={handleBatchFileChange} disabled={batchProcessing}>
-                    Add Files
-                  </Button>
-                  <Button onClick={handleBatchProcess} disabled={batchProcessing || batchFiles.length === 0}>
-                    {batchProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Process Files"
-                    )}
-                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="batch-processing">
+            <Card>
+              <CardHeader>
+                <CardTitle>Batch Processing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Button onClick={handleBatchFileChange} disabled={batchProcessing}>
+                      Add Files
+                    </Button>
+                    <Button onClick={handleBatchProcess} disabled={batchProcessing || batchFiles.length === 0}>
+                      {batchProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        "Process Files"
+                      )}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {batchFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                        <span className="w-1/4 truncate">{file.name}</span>
+                        <Select
+                          value={file.pipeShape}
+                          onValueChange={(value) => handleUpdateBatchFile(index, 'pipeShape', value)}
+                        >
+                          <SelectTrigger className="w-1/4">
+                            <SelectValue placeholder="Pipe Shape" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Circular">Circular</SelectItem>
+                            <SelectItem value="Rectangular">Rectangular</SelectItem>
+                            <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                            <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                            <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
+                            <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          className="w-1/4"
+                          placeholder="Pipe Size"
+                          value={file.pipeSize}
+                          onChange={(e) => handleUpdateBatchFile(index, 'pipeSize', e.target.value)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveBatchFile(index)}
+                          disabled={batchProcessing}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {batchFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                      <span className="w-1/4 truncate">{file.name}</span>
-                      <Select
-                        value={file.pipeShape}
-                        onValueChange={(value) => handleUpdateBatchFile(index, 'pipeShape', value)}
-                      >
-                        <SelectTrigger className="w-1/4">
-                          <SelectValue placeholder="Pipe Shape" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Circular">Circular</SelectItem>
-                          <SelectItem value="Rectangular">Rectangular</SelectItem>
-                          <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
-                          <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
-                          <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
-                          <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        className="w-1/4"
-                        placeholder="Pipe Size"
-                        value={file.pipeSize}
-                        onChange={(e) => handleUpdateBatchFile(index, 'pipeSize', e.target.value)}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveBatchFile(index)}
-                        disabled={batchProcessing}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>Logs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-40 bg-muted rounded-md p-2 overflow-auto">
-            {logs.map((log, index) => (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Logs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-40 bg-muted rounded-md p-2 overflow-auto">
+              {logs.map((log, index) => (
                 <div key={index} className={`${getLogColor(log.level)}`}>
                   {log.message}
                 </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
