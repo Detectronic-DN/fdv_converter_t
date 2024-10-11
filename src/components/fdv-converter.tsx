@@ -20,17 +20,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { listen } from "@tauri-apps/api/event";
 import { path } from "@tauri-apps/api";
 
@@ -99,7 +93,6 @@ export const FdvConverter: React.FC = () => {
 
   
   const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
-  const { toast } = useToast();
 
   const resetState = useCallback(() => {
     setSiteDetails({
@@ -147,10 +140,6 @@ export const FdvConverter: React.FC = () => {
         selected.split("\\").pop() || selected.split("/").pop() || selected;
       setSelectedFile({ name: fileName, path: selected });
       setError(null);
-      toast({
-        title: "File selected",
-        description: `${fileName} has been selected for processing.`,
-      });
     } catch (error) {
       setError(
         `Error selecting file: ${error instanceof Error ? error.message : String(error)
@@ -158,7 +147,7 @@ export const FdvConverter: React.FC = () => {
       );
       setSelectedFile(null);
     }
-  }, [toast, resetState]);
+  }, [resetState]);
 
   const handleProcessFile = useCallback(async () => {
     if (!selectedFile) {
@@ -183,11 +172,6 @@ export const FdvConverter: React.FC = () => {
         startTimestamp: processedData.startTimestamp,
         endTimestamp: processedData.endTimestamp,
       }));
-
-      toast({
-        title: "File processed",
-        description: `The file has been successfully processed. Monitor type: ${processedData.monitorType}`,
-      });
     } catch (error) {
       setError(
         `Error processing file: ${error instanceof Error ? error.message : String(error)
@@ -196,7 +180,7 @@ export const FdvConverter: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedFile, toast]);
+  }, [selectedFile]);
 
   const handleUpdateSiteId = useCallback(async () => {
     try {
@@ -209,18 +193,13 @@ export const FdvConverter: React.FC = () => {
         ...prev,
         siteId: updatedInfo.siteId,
       }));
-
-      toast({
-        title: "Site ID updated",
-        description: "The site ID has been successfully updated.",
-      });
     } catch (error) {
       setError(
         `Error updating site ID: ${error instanceof Error ? error.message : String(error)
         }`
       );
     }
-  }, [siteDetails.siteId, toast]);
+  }, [siteDetails.siteId]);
 
   const handleUpdateSiteName = useCallback(async () => {
     try {
@@ -234,17 +213,13 @@ export const FdvConverter: React.FC = () => {
         siteName: updatedInfo.siteName,
       }));
 
-      toast({
-        title: "Site name updated",
-        description: "The site name has been successfully updated.",
-      });
     } catch (error) {
       setError(
         `Error updating site name: ${error instanceof Error ? error.message : String(error)
         }`
       );
     }
-  }, [siteDetails.siteName, toast]);
+  }, [siteDetails.siteName]);
 
   const handleUpdateTimestamps = useCallback(async () => {
     try {
@@ -272,11 +247,6 @@ export const FdvConverter: React.FC = () => {
           }
           : null
       );
-
-      toast({
-        title: "Timestamps updated",
-        description: "The timestamps have been successfully updated.",
-      });
     } catch (error) {
       setError(
         `Error updating timestamps: ${error instanceof Error ? error.message : String(error)
@@ -285,7 +255,7 @@ export const FdvConverter: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [siteDetails.startTimestamp, siteDetails.endTimestamp, toast]);
+  }, [siteDetails.startTimestamp, siteDetails.endTimestamp]);
 
   const addLog = useCallback((level: string, message: string) => {
     setLogs((prevLogs) => [...prevLogs, { level, message }]);
@@ -362,18 +332,9 @@ export const FdvConverter: React.FC = () => {
           pipeSize: pipeSize || ''
         })
         console.log("FDV created successfully:", result)
-        toast({
-          title: "FDV Created",
-          description: `FDV file has been created successfully at ${savePath}`,
-        })
       }
     } catch (error) {
       console.error('Error creating FDV:', error)
-      toast({
-        title: "Error",
-        description: `Failed to create FDV file: ${(error as Error).message}`,
-        variant: "destructive",
-      })
     }
   }
 
@@ -389,34 +350,19 @@ export const FdvConverter: React.FC = () => {
       })
 
       if (savePath) {
-        const result = await invoke('create_rainfall', {
+        await invoke('create_rainfall', {
           outputPath: savePath,
           rainfallCol: rainfallColumn,
-        })
-        console.log("FDV created successfully:", result)
-        toast({
-          title: "Rainfall Rainfall",
-          description: `FDV file has been created successfully at ${savePath}`,
         })
       }
     } catch (error) {
       console.error('Error creating Rainfall Rainfall:', error)
-      toast({
-        title: "Error",
-        description: `Failed to create Rainfall Rainfall: ${(error as Error).message}`,
-        variant: "destructive",
-      })
     }
   }
 
   const handleCalculateR3 = useCallback(async () => {
     if (!pipeWidth || !pipeHeight) {
       setError("Please fill in all required fields");
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -433,47 +379,24 @@ export const FdvConverter: React.FC = () => {
 
       if (isNaN(numericResult) || numericResult === -1) {
         setError("R3 calculation failed");
-        toast({
-          title: "Error",
-          description: "R3 calculation failed",
-          variant: "destructive",
-        });
         return;
       }
 
       const formattedR3 = numericResult.toFixed(2);
       setR3Value(formattedR3);
-      toast({
-        title: "R3 Calculated",
-        description: `The R3 value has been calculated: ${formattedR3}`,
-      });
     } catch (error) {
       const errorMessage = `Failed to calculate R3: ${(error as Error).message}`;
       setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
     }
-  }, [eggType, pipeWidth, pipeHeight, toast]);
+  }, [eggType, pipeWidth, pipeHeight]);
 
   const handleUseR3 = useCallback(() => {
     if (pipeWidth && pipeHeight && r3Value) {
       const newPipeSize = `${pipeWidth},${pipeHeight},${r3Value}`;
       setPipeSize(newPipeSize);
       setActiveTab('fdv-converter');
-      toast({
-        title: "R3 Value Used",
-        description: "The R3 value has been applied to the pipe size.",
-      });
     } else {
       setError('Please calculate R3 value first');
-      toast({
-        title: "Error",
-        description: "Please calculate R3 value first",
-        variant: "destructive",
-      });
     }
   }, [pipeWidth, pipeHeight, r3Value]);
 
@@ -493,28 +416,24 @@ export const FdvConverter: React.FC = () => {
       if (Array.isArray(selected)) {
         const newFiles = selected.map((path) => {
           const fileName = path.split("\\").pop() || path.split("/").pop() || path;
-          return { name: fileName, path, pipeShape: "", pipeSize: "" };
+          return { name: fileName, path, pipeShape: "Circular", pipeSize: "" };
         });
         setBatchFiles((prev) => [...prev, ...newFiles]);
-        toast({
-          title: "Files added",
-          description: `${newFiles.length} file(s) have been added for batch processing.`,
-        });
       }
     } catch (error) {
       setError(
         `Error selecting files: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [toast]);
+  }, [setError]);
 
   const handleRemoveBatchFile = useCallback((index: number) => {
     setBatchFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleConfigureBatchFile = useCallback((index: number, pipeShape: string, pipeSize: string) => {
+  const handleUpdateBatchFile = useCallback((index: number, field: 'pipeShape' | 'pipeSize', value: string) => {
     setBatchFiles((prev) => prev.map((file, i) =>
-      i === index ? { ...file, pipeShape, pipeSize } : file
+      i === index ? { ...file, [field]: value } : file
     ));
   }, []);
 
@@ -545,18 +464,10 @@ export const FdvConverter: React.FC = () => {
         pipesize: file.pipeSize
       })));
 
-      const result = await invoke<string>("run_batch_process", {
+      await invoke<string>("run_batch_process", {
         fileInfos: fileInfos,
         outputDir: await path.normalize(outputDir)
       });
-
-      console.log("Batch processing result:", result);
-      toast({
-        title: "Batch Processing Complete",
-        description: result,
-      });
-
-      // Clear the batch files after processing
       setBatchFiles([]);
     } catch (error) {
       setError(
@@ -565,7 +476,7 @@ export const FdvConverter: React.FC = () => {
     } finally {
       setBatchProcessing(false);
     }
-  }, [batchFiles, toast]);
+  }, [batchFiles]);
 
   const isFormValid = useMemo(() => {
     return (
@@ -884,48 +795,37 @@ export const FdvConverter: React.FC = () => {
                 <div className="space-y-2">
                   {batchFiles.map((file, index) => (
                     <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                      <span>{file.name}</span>
-                      <div className="flex items-center space-x-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">Configure</Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80">
-                            <div className="grid gap-4">
-                              <h4 className="font-medium leading-none">Configure File</h4>
-                              <Select
-                                value={file.pipeShape}
-                                onValueChange={(value) => handleConfigureBatchFile(index, value, file.pipeSize)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Pipe Shape" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Circular">Circular</SelectItem>
-                                  <SelectItem value="Rectangular">Rectangular</SelectItem>
-                                  <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
-                                  <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
-                                  <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
-                                  <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                placeholder="Pipe Size"
-                                value={file.pipeSize}
-                                onChange={(e) => handleConfigureBatchFile(index, file.pipeShape, e.target.value)}
-                              />
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveBatchFile(index)}
-                          disabled={batchProcessing}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <span className="w-1/4 truncate">{file.name}</span>
+                      <Select
+                        value={file.pipeShape}
+                        onValueChange={(value) => handleUpdateBatchFile(index, 'pipeShape', value)}
+                      >
+                        <SelectTrigger className="w-1/4">
+                          <SelectValue placeholder="Pipe Shape" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Circular">Circular</SelectItem>
+                          <SelectItem value="Rectangular">Rectangular</SelectItem>
+                          <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                          <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                          <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
+                          <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        className="w-1/4"
+                        placeholder="Pipe Size"
+                        value={file.pipeSize}
+                        onChange={(e) => handleUpdateBatchFile(index, 'pipeSize', e.target.value)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveBatchFile(index)}
+                        disabled={batchProcessing}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
