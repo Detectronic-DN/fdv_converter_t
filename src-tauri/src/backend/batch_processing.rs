@@ -106,7 +106,7 @@ impl BatchProcessor {
         let output_path = output_dir.join(output_filename);
 
         match monitor_type {
-            "flow" | "depth" => {
+            "Flow" | "Depth" => {
                 let pipe_shape = file_info["pipeshape"].as_str()
                     .ok_or_else(|| BatchProcessingError::FileProcessingError("Pipe shape is required for flow/depth conversion".to_string()))?;
                 let pipe_size = file_info["pipesize"].as_str()
@@ -120,7 +120,7 @@ impl BatchProcessor {
                     pipe_size
                 )
             },
-            "rainfall" => {
+            "Rainfall" => {
                 ch.create_rainfall(
                     output_path.to_str().unwrap(),
                     &Self::extract_column_name(column_mapping, "rainfall")?
