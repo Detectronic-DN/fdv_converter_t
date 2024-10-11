@@ -20,13 +20,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { listen } from "@tauri-apps/api/event";
+import { path } from "@tauri-apps/api";
 
 interface SiteDetails {
   siteId: string;
@@ -38,6 +44,11 @@ interface SiteDetails {
 interface FileDetails {
   name: string;
   path: string;
+}
+
+interface BatchFileDetails extends FileDetails {
+  pipeShape: string;
+  pipeSize: string;
 }
 
 interface LogMessage {
@@ -83,8 +94,11 @@ export const FdvConverter: React.FC = () => {
   const [pipeHeight, setPipeHeight] = useState("");
   const [r3Value, setR3Value] = useState("");
   const [_, setActiveTab] = useState("fdv-converter");
-  const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
+  const [batchFiles, setBatchFiles] = useState<BatchFileDetails[]>([]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
+  
+  const allColumns = processedData?.columnMapping ? Object.values(processedData.columnMapping).flat() : [];
   const { toast } = useToast();
 
   const resetState = useCallback(() => {
@@ -463,6 +477,96 @@ export const FdvConverter: React.FC = () => {
     }
   }, [pipeWidth, pipeHeight, r3Value]);
 
+
+  const handleBatchFileChange = useCallback(async () => {
+    try {
+      const selected = await open({
+        multiple: true,
+        filters: [
+          {
+            name: "Spreadsheet",
+            extensions: ["xlsx", "xls", "csv"],
+          },
+        ],
+      });
+
+      if (Array.isArray(selected)) {
+        const newFiles = selected.map((path) => {
+          const fileName = path.split("\\").pop() || path.split("/").pop() || path;
+          return { name: fileName, path, pipeShape: "", pipeSize: "" };
+        });
+        setBatchFiles((prev) => [...prev, ...newFiles]);
+        toast({
+          title: "Files added",
+          description: `${newFiles.length} file(s) have been added for batch processing.`,
+        });
+      }
+    } catch (error) {
+      setError(
+        `Error selecting files: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }, [toast]);
+
+  const handleRemoveBatchFile = useCallback((index: number) => {
+    setBatchFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleConfigureBatchFile = useCallback((index: number, pipeShape: string, pipeSize: string) => {
+    setBatchFiles((prev) => prev.map((file, i) =>
+      i === index ? { ...file, pipeShape, pipeSize } : file
+    ));
+  }, []);
+
+  const handleBatchProcess = useCallback(async () => {
+    if (batchFiles.length === 0) {
+      setError("No files selected for batch processing.");
+      return;
+    }
+
+    try {
+      setBatchProcessing(true);
+      setError(null);
+
+      const outputDir = await open({
+        directory: true,
+        multiple: false,
+        title: "Select Output Directory",
+      });
+
+      if (!outputDir) {
+        setBatchProcessing(false);
+        return;
+      }
+
+      const fileInfos = await Promise.all(batchFiles.map(async file => ({
+        filepath: await path.normalize(file.path),
+        pipeshape: file.pipeShape,
+        pipesize: file.pipeSize
+      })));
+
+      const result = await invoke<string>("run_batch_process", {
+        fileInfos: fileInfos,
+        outputDir: await path.normalize(outputDir)
+      });
+
+      console.log("Batch processing result:", result);
+      toast({
+        title: "Batch Processing Complete",
+        description: result,
+      });
+
+      // Clear the batch files after processing
+      setBatchFiles([]);
+    } catch (error) {
+      setError(
+        `Error during batch processing: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setBatchProcessing(false);
+    }
+  }, [batchFiles, toast]);
+
   const isFormValid = useMemo(() => {
     return (
       siteDetails.siteId.trim() !== "" &&
@@ -756,7 +860,78 @@ export const FdvConverter: React.FC = () => {
           </Card>
         </TabsContent>
         <TabsContent value="batch-processing">
-          Batch Processing content (To be implemented)
+          <Card>
+            <CardHeader>
+              <CardTitle>Batch Processing</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Button onClick={handleBatchFileChange} disabled={batchProcessing}>
+                    Add Files
+                  </Button>
+                  <Button onClick={handleBatchProcess} disabled={batchProcessing || batchFiles.length === 0}>
+                    {batchProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Process Files"
+                    )}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {batchFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                      <span>{file.name}</span>
+                      <div className="flex items-center space-x-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">Configure</Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80">
+                            <div className="grid gap-4">
+                              <h4 className="font-medium leading-none">Configure File</h4>
+                              <Select
+                                value={file.pipeShape}
+                                onValueChange={(value) => handleConfigureBatchFile(index, value, file.pipeSize)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Pipe Shape" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Circular">Circular</SelectItem>
+                                  <SelectItem value="Rectangular">Rectangular</SelectItem>
+                                  <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
+                                  <SelectItem value="Egg Type 2">Egg Type 2</SelectItem>
+                                  <SelectItem value="Egg Type 2A">Egg Type 2A</SelectItem>
+                                  <SelectItem value="Two Circle and Rectangle">Two Circle and Rectangle</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                placeholder="Pipe Size"
+                                value={file.pipeSize}
+                                onChange={(e) => handleConfigureBatchFile(index, file.pipeShape, e.target.value)}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveBatchFile(index)}
+                          disabled={batchProcessing}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 .vscode
 package-lock.json
+
+#data
+*.csv
+*.fdv
+*.r
+*.zip

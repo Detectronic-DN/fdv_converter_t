@@ -33,7 +33,8 @@ pub fn run() {
                 update_site_id,
                 create_fdv_flow,
                 create_rainfall,
-                calculate_r3
+                calculate_r3,
+                run_batch_process
             ]
         )
         .run(tauri::generate_context!())

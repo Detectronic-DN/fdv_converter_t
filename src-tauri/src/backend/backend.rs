@@ -1,9 +1,11 @@
 use std::option::Option;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::Instant;
 use chrono::Duration;
 use polars::prelude::*;
-use serde_json::json;
+use serde_json::{json, Value};
+use crate::backend::batch_processing::BatchProcessor;
 use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
 use crate::utils::logger::clear_logs;
 use crate::fdv::fdv_creator::FDVFlowCreator;
@@ -281,4 +283,26 @@ impl CommandHandler {
             }
         }
     }
+
+    pub fn run_batch_process(&self, file_infos: Vec<Value>, output_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let mut batch_processor = BatchProcessor::new();
+        let start_time = Instant::now();
+
+        log::info!("Starting batch processing {} files...", file_infos.len());
+
+        match batch_processor.process_convert_and_zip(file_infos, output_dir) {
+            Ok(zip_path) => {
+                let duration = start_time.elapsed();
+                log::info!("Batch processing and zipping completed successfully in {:?}.", duration);
+                log::info!("Output zip file: {:?}", zip_path);
+            },
+            Err(e) => {
+                log::error!("Error during processing, conversion, or zipping: {}", e);
+                return Err(Box::new(e));
+            }
+        }
+
+        Ok(())
+    }
+
 }

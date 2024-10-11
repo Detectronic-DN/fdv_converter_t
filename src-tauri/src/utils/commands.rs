@@ -1,4 +1,6 @@
+use std::path::Path;
 use std::sync::Mutex;
+use serde_json::Value;
 use tauri::State;
 use crate::backend::backend::CommandHandler;
 
@@ -90,5 +92,20 @@ pub fn calculate_r3(
         Err("Failed to calculate R3 value".to_string())
     } else {
         Ok(r3_value.to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn run_batch_process(
+    state: State<'_, AppState>,
+    file_infos: Vec<Value>,
+    output_dir: String,
+) -> Result<String, String> {
+    let command_handler = state.command_handler.lock().map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
+    let output_path = Path::new(&output_dir);
+
+    match command_handler.run_batch_process(file_infos, output_path) {
+        Ok(()) => Ok("Batch processing completed successfully".to_string()),
+        Err(e) => Err(format!("Error during batch processing: {}", e)),
     }
 }
