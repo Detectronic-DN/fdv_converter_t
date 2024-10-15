@@ -154,7 +154,7 @@ export const FdvConverter: React.FC = () => {
       setError(null);
 
       // Automatically process the file after selection
-      await handleProcessFile();
+      await handleProcessFile(selected);
     } catch (error) {
       setError(
           `Error selecting file: ${error instanceof Error ? error.message : String(error)}`
@@ -165,19 +165,14 @@ export const FdvConverter: React.FC = () => {
     }
   }, [resetState]);
 
-  const handleProcessFile = useCallback(async () => {
-    if (!selectedFile) {
-      setError("No file selected. Please select a file first.");
-      return;
-    }
-
+  const handleProcessFile = useCallback(async (filePath: string) => {
     try {
       setIsProcessing(true);
       setIsLoading(true);
       setError(null);
 
       const result = await invoke("process_file", {
-        filePath: selectedFile.path,
+        filePath: filePath,
       });
       const processedData = JSON.parse(result as string);
 

@@ -3,6 +3,7 @@ use chrono::{Duration, NaiveDateTime};
 use polars::prelude::*;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum InterimReportError {
@@ -10,6 +11,18 @@ pub enum InterimReportError {
     DataFrameError(String),
     InvalidMonitorType(String),
 }
+
+impl fmt::Display for InterimReportError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            InterimReportError::ColumnExtractionError(msg) => write!(f, "Column extraction error: {}", msg),
+            InterimReportError::DataFrameError(msg) => write!(f, "DataFrame error: {}", msg),
+            InterimReportError::InvalidMonitorType(msg) => write!(f, "Invalid monitor type: {}", msg),
+        }
+    }
+}
+
+impl Error for InterimReportError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MonitorType {
@@ -24,7 +37,7 @@ impl MonitorType {
             "flow" => Ok(MonitorType::Flow),
             "depth" => Ok(MonitorType::Depth),
             "rainfall" => Ok(MonitorType::Rainfall),
-            _ => Err(InterimReportError::InvalidMonitorType(s.to_string())),
+            _ => Err(InterimReportError::InvalidMonitorType(format!("'{}' is not a valid monitor type", s))),
         }
     }
 }

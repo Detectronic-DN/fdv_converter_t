@@ -10,10 +10,6 @@ use zip::CompressionMethod;
 
 #[derive(Debug, Clone)]
 pub struct ProcessedFileInfo {
-    pub filepath: PathBuf,
-    pub site_name: String,
-    pub processed: bool,
-    pub converted: bool,
     pub conversion_output_path: Option<PathBuf>,
 }
 
@@ -72,15 +68,6 @@ impl BatchProcessor {
                     self.process_and_convert_file(&file_info, &input_path, output_dir)?;
 
                 let processed_file_info = ProcessedFileInfo {
-                    filepath: input_path,
-                    site_name: output_path
-                        .file_stem()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                    processed: true,
-                    converted: true,
                     conversion_output_path: Some(output_path),
                 };
                 Ok(processed_file_info)

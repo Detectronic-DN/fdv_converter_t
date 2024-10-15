@@ -22,6 +22,19 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Detectronic-DN/fdv_converter_t/releases/download/v2.0.0/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5NUJDMTkyQzcwOEQzRApSV1E5alhBc0dieVZBL3VaUmwvUHpGTGxHVGRLSDM5dkd5RW5xRjc0Wm41Mm1kVGdGNk1NNE5NUQo=",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
