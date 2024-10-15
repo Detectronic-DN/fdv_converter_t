@@ -1,7 +1,7 @@
 {
-  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "$schema": "https://schema.tauri.app/config/2.0.1",
   "productName": "fdvconverter",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "identifier": "com.fdvconverter.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,7 +26,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/Detectronic-DN/fdv_converter_t/releases/download/v2.0.0/latest.json"
+        "https://github.com/Detectronic-DN/fdv_converter_t/releases/download/v2.0.2/latest.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5NUJDMTkyQzcwOEQzRApSV1E5alhBc0dieVZBL3VaUmwvUHpGTGxHVGRLSDM5dkd5RW5xRjc0Wm41Mm1kVGdGNk1NNE5NUQo=",

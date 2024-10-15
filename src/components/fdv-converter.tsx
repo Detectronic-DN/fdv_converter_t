@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,7 +88,7 @@ export const FdvConverter: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [depthColumn, setDepthColumn] = useState<string>("");
   const [velocityColumn, setVelocityColumn] = useState<string>("");
-  const [pipeShape, setPipeShape] = useState<string>("");
+  const [pipeShape, setPipeShape] = useState<string>("Circular");
   const [pipeSize, setPipeSize] = useState<string>("");
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [processedData, setProcessedData] = useState<ProcessedFileData | null>(
@@ -298,6 +298,14 @@ export const FdvConverter: React.FC = () => {
       unlistenLogMessage.then((unlisten) => unlisten());
     };
   }, [addLog]);
+
+  const logContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>, updateFunction: () => void) => {
@@ -942,11 +950,14 @@ export const FdvConverter: React.FC = () => {
             <CardTitle>Logs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-40 bg-muted rounded-md p-2 overflow-auto">
+            <div
+                ref={logContainerRef}
+                className="h-40 bg-muted rounded-md p-2 overflow-auto"
+            >
               {logs.map((log, index) => (
-                <div key={index} className={`${getLogColor(log.level)}`}>
-                  {log.message}
-                </div>
+                  <div key={index} className={`${getLogColor(log.level)}`}>
+                    {log.message}
+                  </div>
               ))}
             </div>
           </CardContent>
