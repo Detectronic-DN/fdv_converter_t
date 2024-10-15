@@ -89,14 +89,20 @@ impl Logger {
     pub fn set_frontend_logging(&self, enabled: bool) {
         *self.frontend_logging_enabled.lock().unwrap() = enabled;
     }
-
-
 }
 
 fn should_filter_log(record: &Record) -> bool {
-    record.target().starts_with("tao::platform_impl::platform::event_loop::runner") &&
-        (record.args().to_string().contains("NewEvents emitted without explicit RedrawEventsCleared") ||
-            record.args().to_string().contains("RedrawEventsCleared emitted without explicit MainEventsCleared"))
+    record
+        .target()
+        .starts_with("tao::platform_impl::platform::event_loop::runner")
+        && (record
+            .args()
+            .to_string()
+            .contains("NewEvents emitted without explicit RedrawEventsCleared")
+            || record
+                .args()
+                .to_string()
+                .contains("RedrawEventsCleared emitted without explicit MainEventsCleared"))
 }
 
 struct LoggerImplementation;

@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
 use polars::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
@@ -45,14 +45,21 @@ impl FDVRainfallCreator {
                 "**UNITS:                 1,MM/HR".to_string(),
                 "**FORMAT:                2,F15.1,[5]".to_string(),
                 "**RECORD_LENGTH:         I2,75".to_string(),
-                "**CONSTANTS:             35,LOCATION,0_ANT_RAIN,1_ANT_RAIN,2_ANT_RAIN,".to_string(),
+                "**CONSTANTS:             35,LOCATION,0_ANT_RAIN,1_ANT_RAIN,2_ANT_RAIN,"
+                    .to_string(),
                 "*+                       3_ANT_RAIN,4_ANT_RAIN,5_ANT_RAIN,6_ANT_RAIN,".to_string(),
-                "*+                       7_ANT_RAIN,8_ANT_RAIN,9_ANT_RAIN,10_ANT_RAIN,".to_string(),
-                "*+                       11_ANT_RAIN,12_ANT_RAIN,13_ANT_RAIN,14_ANT_RAIN,".to_string(),
-                "*+                       15_ANT_RAIN,16_ANT_RAIN,17_ANT_RAIN,18_ANT_RAIN,".to_string(),
-                "*+                       19_ANT_RAIN,20_ANT_RAIN,21_ANT_RAIN,22_ANT_RAIN,".to_string(),
-                "*+                       23_ANT_RAIN,24_ANT_RAIN,25_ANT_RAIN,26_ANT_RAIN,".to_string(),
-                "*+                       27_ANT_RAIN,28_ANT_RAIN,29_ANT_RAIN,30_ANT_RAIN,".to_string(),
+                "*+                       7_ANT_RAIN,8_ANT_RAIN,9_ANT_RAIN,10_ANT_RAIN,"
+                    .to_string(),
+                "*+                       11_ANT_RAIN,12_ANT_RAIN,13_ANT_RAIN,14_ANT_RAIN,"
+                    .to_string(),
+                "*+                       15_ANT_RAIN,16_ANT_RAIN,17_ANT_RAIN,18_ANT_RAIN,"
+                    .to_string(),
+                "*+                       19_ANT_RAIN,20_ANT_RAIN,21_ANT_RAIN,22_ANT_RAIN,"
+                    .to_string(),
+                "*+                       23_ANT_RAIN,24_ANT_RAIN,25_ANT_RAIN,26_ANT_RAIN,"
+                    .to_string(),
+                "*+                       27_ANT_RAIN,28_ANT_RAIN,29_ANT_RAIN,30_ANT_RAIN,"
+                    .to_string(),
                 "*+                       START,END,INTERVAL".to_string(),
                 "**C_UNITS:               35, ,MM,MM,MM,MM,MM,MM,MM,MM,MM,MM,".to_string(),
                 "**C_UNITS:               MM,MM,MM,MM,MM,MM,MM,MM,MM,MM,MM,".to_string(),
@@ -60,8 +67,10 @@ impl FDVRainfallCreator {
                 "**C_FORMAT:              8,A20,F7.2/15F5.1/15F5.1/D10,2X,D10,I4".to_string(),
                 "*CSTART".to_string(),
                 "UNKNOWN              -1.0 ".to_string(),
-                "-1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 ".to_string(),
-                "-1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 ".to_string(),
+                "-1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 "
+                    .to_string(),
+                "-1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 -1.0 "
+                    .to_string(),
             ],
             start_ts: None,
             end_ts: None,
@@ -91,16 +100,28 @@ impl FDVRainfallCreator {
         } else {
             site_name
         };
-        self.header_lines[1] = format!("**IDENTIFIER:            1,{}", truncated_name.to_uppercase());
+        self.header_lines[1] = format!(
+            "**IDENTIFIER:            1,{}",
+            truncated_name.to_uppercase()
+        );
     }
 
-    pub fn set_starting_time(&mut self, starting_time: &str) -> Result<(), FDVRainfallCreatorError> {
-        self.start_ts = Some(NaiveDateTime::parse_from_str(starting_time, "%Y-%m-%d %H:%M:%S")?);
+    pub fn set_starting_time(
+        &mut self,
+        starting_time: &str,
+    ) -> Result<(), FDVRainfallCreatorError> {
+        self.start_ts = Some(NaiveDateTime::parse_from_str(
+            starting_time,
+            "%Y-%m-%d %H:%M:%S",
+        )?);
         Ok(())
     }
 
     pub fn set_ending_time(&mut self, ending_time: &str) -> Result<(), FDVRainfallCreatorError> {
-        self.end_ts = Some(NaiveDateTime::parse_from_str(ending_time, "%Y-%m-%d %H:%M:%S")?);
+        self.end_ts = Some(NaiveDateTime::parse_from_str(
+            ending_time,
+            "%Y-%m-%d %H:%M:%S",
+        )?);
         Ok(())
     }
 
@@ -116,7 +137,11 @@ impl FDVRainfallCreator {
             let interval_in_minutes = self.interval.unwrap();
             let start_str = self.start_ts.unwrap().format("%Y%m%d%H%M").to_string();
             let end_str = self.end_ts.unwrap().format("%Y%m%d%H%M").to_string();
-            writeln!(writer, "{} {}   {}", start_str, end_str, interval_in_minutes)?;
+            writeln!(
+                writer,
+                "{} {}   {}",
+                start_str, end_str, interval_in_minutes
+            )?;
             writeln!(writer, "*CEND")?;
         }
         Ok(())
@@ -184,17 +209,30 @@ impl FDVRainfallCreator {
         Ok(())
     }
 
-    pub fn process_data(&mut self, col_names: HashMap<String, String>) -> Result<(), FDVRainfallCreatorError> {
-        let rainfall_col = col_names.get("rainfall").ok_or_else(|| FDVRainfallCreatorError::InvalidParameter("Rainfall column name not provided".to_string()))?;
+    pub fn process_data(
+        &mut self,
+        col_names: HashMap<String, String>,
+    ) -> Result<(), FDVRainfallCreatorError> {
+        let rainfall_col = col_names.get("rainfall").ok_or_else(|| {
+            FDVRainfallCreatorError::InvalidParameter(
+                "Rainfall column name not provided".to_string(),
+            )
+        })?;
 
         self.value_count = 1;
 
-        let df = self.df.as_mut().ok_or_else(|| FDVRainfallCreatorError::InvalidParameter("DataFrame not set".to_string()))?;
+        let df = self.df.as_mut().ok_or_else(|| {
+            FDVRainfallCreatorError::InvalidParameter("DataFrame not set".to_string())
+        })?;
 
         self.null_readings = df.column(rainfall_col)?.null_count();
 
         let rainfall_series = df.column(rainfall_col)?.clone();
-        let rainfall_values: Vec<f64> = rainfall_series.f64()?.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+        let rainfall_values: Vec<f64> = rainfall_series
+            .f64()?
+            .into_iter()
+            .map(|v| v.unwrap_or(0.0))
+            .collect();
 
         for value in rainfall_values {
             self.insert_value(value)?;
@@ -256,19 +294,29 @@ impl FDVRainfallCreator {
     }
 
     pub fn create_fdv_rainfall(&mut self) -> Result<(), FDVRainfallCreatorError> {
-        self.validate_params().map_err(|e| FDVRainfallCreatorError::InvalidParameter(e.to_string()))?;
+        self.validate_params()
+            .map_err(|e| FDVRainfallCreatorError::InvalidParameter(e.to_string()))?;
 
         self.header()?;
 
         let col_names = HashMap::from([
-            ("timestamp".to_string(), self.timestamp_col.clone().unwrap_or_default()),
-            ("rainfall".to_string(), self.rainfall_col.clone().unwrap_or_default()),
+            (
+                "timestamp".to_string(),
+                self.timestamp_col.clone().unwrap_or_default(),
+            ),
+            (
+                "rainfall".to_string(),
+                self.rainfall_col.clone().unwrap_or_default(),
+            ),
         ]);
         self.process_data(col_names)?;
 
         self.write_tail()?;
 
-        log::info!("FDV rainfall creation completed successfully. Null readings: {}", self.get_null_readings());
+        log::info!(
+            "FDV rainfall creation completed successfully. Null readings: {}",
+            self.get_null_readings()
+        );
 
         Ok(())
     }

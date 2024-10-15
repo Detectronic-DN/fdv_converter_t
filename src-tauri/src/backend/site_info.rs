@@ -66,6 +66,7 @@ impl SiteInfo {
             }
         }
     }
+    //todo: need to add logic for the column if the name is Level
 
     pub(crate) fn determine_monitor_type(
         &mut self,

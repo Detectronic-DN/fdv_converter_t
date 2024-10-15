@@ -1,10 +1,10 @@
-use thiserror::Error;
-use std::io::{self, BufWriter, Write};
-use polars::prelude::*;
 use chrono::{NaiveDateTime, ParseError};
-use std::fs::File;
-use std::path::Path;
+use polars::prelude::*;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{self, BufWriter, Write};
+use std::path::Path;
+use thiserror::Error;
 
 use crate::calculations::calculator::{CalculationError, Calculator};
 use crate::calculations::circular_calculator::CircularCalculator;
@@ -43,7 +43,6 @@ pub struct FDVFlowCreator {
     velocity_null_readings: usize,
     value_count: usize,
 }
-
 
 impl FDVFlowCreator {
     pub fn new() -> Self {
@@ -85,7 +84,10 @@ impl FDVFlowCreator {
         } else {
             site_name
         };
-        self.header_lines[1] = format!("**IDENTIFIER:            1,{}", truncated_name.to_uppercase());
+        self.header_lines[1] = format!(
+            "**IDENTIFIER:            1,{}",
+            truncated_name.to_uppercase()
+        );
     }
     pub fn set_calculator(&mut self, calculator: Box<dyn Calculator>) {
         self.calculator = Some(calculator);
@@ -102,12 +104,18 @@ impl FDVFlowCreator {
     }
 
     pub fn set_starting_time(&mut self, starting_time: &str) -> Result<(), FDVFlowCreatorError> {
-        self.start_ts = Some(NaiveDateTime::parse_from_str(starting_time, "%Y-%m-%d %H:%M:%S")?);
+        self.start_ts = Some(NaiveDateTime::parse_from_str(
+            starting_time,
+            "%Y-%m-%d %H:%M:%S",
+        )?);
         Ok(())
     }
 
     pub fn set_ending_time(&mut self, ending_time: &str) -> Result<(), FDVFlowCreatorError> {
-        self.end_ts = Some(NaiveDateTime::parse_from_str(ending_time, "%Y-%m-%d %H:%M:%S")?);
+        self.end_ts = Some(NaiveDateTime::parse_from_str(
+            ending_time,
+            "%Y-%m-%d %H:%M:%S",
+        )?);
         Ok(())
     }
 
@@ -123,7 +131,11 @@ impl FDVFlowCreator {
             let interval_in_minutes = self.interval.unwrap();
             let start_str = self.start_ts.unwrap().format("%Y%m%d%H%M").to_string();
             let end_str = self.end_ts.unwrap().format("%Y%m%d%H%M").to_string();
-            writeln!(writer, "{} {}   {}", start_str, end_str, interval_in_minutes)?;
+            writeln!(
+                writer,
+                "{} {}   {}",
+                start_str, end_str, interval_in_minutes
+            )?;
             writeln!(writer, "*CEND")?;
         }
         Ok(())
@@ -138,7 +150,13 @@ impl FDVFlowCreator {
 
     fn write_output(&mut self, depth: f64, velocity: f64, result: f64) -> io::Result<()> {
         if let Some(ref mut writer) = self.output_file {
-            write!(writer, "{:5.0}{:5.0}{:5.2}", result, (depth * 1000.0).round(), velocity)?;
+            write!(
+                writer,
+                "{:5.0}{:5.0}{:5.2}",
+                result,
+                (depth * 1000.0).round(),
+                velocity
+            )?;
             if self.value_count % 5 == 0 {
                 writeln!(writer)?;
             }
@@ -147,21 +165,41 @@ impl FDVFlowCreator {
         Ok(())
     }
 
-    pub fn process_data(&mut self, col_names: HashMap<String, String>) -> Result<(), FDVFlowCreatorError> {
-        let depth_col = col_names.get("depth").map(|s| s.as_str()).ok_or_else(|| FDVFlowCreatorError::InvalidParameter("Depth column name not provided".to_string()))?;
-        let velocity_col = col_names.get("velocity").map(|s| s.as_str()).ok_or_else(|| FDVFlowCreatorError::InvalidParameter("Velocity column name not provided".to_string()))?;
+    pub fn process_data(
+        &mut self,
+        col_names: HashMap<String, String>,
+    ) -> Result<(), FDVFlowCreatorError> {
+        let depth_col = col_names.get("depth").map(|s| s.as_str()).ok_or_else(|| {
+            FDVFlowCreatorError::InvalidParameter("Depth column name not provided".to_string())
+        })?;
+        let velocity_col = col_names
+            .get("velocity")
+            .map(|s| s.as_str())
+            .ok_or_else(|| {
+                FDVFlowCreatorError::InvalidParameter(
+                    "Velocity column name not provided".to_string(),
+                )
+            })?;
 
         self.value_count = 1;
 
-        let df = self.df.as_mut().ok_or_else(|| FDVFlowCreatorError::InvalidParameter("DataFrame not set".to_string()))?;
+        let df = self.df.as_mut().ok_or_else(|| {
+            FDVFlowCreatorError::InvalidParameter("DataFrame not set".to_string())
+        })?;
 
         if !df.get_column_names().iter().any(|&col| col == depth_col) {
-            log::error!("Warning: Depth column '{}' not found. Using 0.0 for all values.", depth_col);
+            log::error!(
+                "Warning: Depth column '{}' not found. Using 0.0 for all values.",
+                depth_col
+            );
             df.with_column(Series::new(depth_col.into(), vec![0.0f64; df.height()]))?;
         }
 
         if !df.get_column_names().iter().any(|&col| col == velocity_col) {
-            log::error!("Warning: Velocity column '{}' not found. Using 0.0 for all values.", velocity_col);
+            log::error!(
+                "Warning: Velocity column '{}' not found. Using 0.0 for all values.",
+                velocity_col
+            );
             df.with_column(Series::new(velocity_col.into(), vec![0.0f64; df.height()]))?;
         }
 
@@ -169,11 +207,9 @@ impl FDVFlowCreator {
         self.velocity_null_readings = df.column(velocity_col)?.null_count();
 
         // Handle the Result inside the closure
-        df.apply(depth_col, |s| {
-            match s.fill_null(FillNullStrategy::Zero) {
-                Ok(filled) => filled,
-                Err(_) => s.clone(),
-            }
+        df.apply(depth_col, |s| match s.fill_null(FillNullStrategy::Zero) {
+            Ok(filled) => filled,
+            Err(_) => s.clone(),
         })?;
         df.apply(velocity_col, |s| {
             match s.fill_null(FillNullStrategy::Zero) {
@@ -185,23 +221,37 @@ impl FDVFlowCreator {
         let depth_series = df.column(depth_col)?.clone();
         let velocity_series = df.column(velocity_col)?.clone();
 
-        let calculator = self.calculator.as_ref().ok_or_else(|| FDVFlowCreatorError::InvalidParameter("Calculator not set".to_string()))?;
+        let calculator = self.calculator.as_ref().ok_or_else(|| {
+            FDVFlowCreatorError::InvalidParameter("Calculator not set".to_string())
+        })?;
 
-        let depth_values: Vec<f64> = depth_series.f64()?.into_iter().map(|v| v.unwrap_or(0.0)).collect();
-        let velocity_values: Vec<f64> = velocity_series.f64()?.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+        let depth_values: Vec<f64> = depth_series
+            .f64()?
+            .into_iter()
+            .map(|v| v.unwrap_or(0.0))
+            .collect();
+        let velocity_values: Vec<f64> = velocity_series
+            .f64()?
+            .into_iter()
+            .map(|v| v.unwrap_or(0.0))
+            .collect();
 
-        let results: Vec<_> = depth_values.iter().zip(velocity_values.iter())
+        let results: Vec<_> = depth_values
+            .iter()
+            .zip(velocity_values.iter())
             .map(|(&depth, &velocity)| {
-                let depth = if depth_col.contains("mm") && !depth_col.to_lowercase().contains("level") {
-                    depth / 1000.0
-                } else {
-                    depth
-                };
+                let depth =
+                    if depth_col.contains("mm") && !depth_col.to_lowercase().contains("level") {
+                        depth / 1000.0
+                    } else {
+                        depth
+                    };
 
                 if depth == 0.0 || velocity == 0.0 {
                     Ok((depth, velocity, 0.0))
                 } else {
-                    calculator.perform_calculation(depth, velocity)
+                    calculator
+                        .perform_calculation(depth, velocity)
                         .map(|result| (depth, velocity, result))
                 }
             })
@@ -261,7 +311,10 @@ impl FDVFlowCreator {
         self.set_interval(interval);
         self.open_output_file(output_file)?;
 
-        if !col_names.contains_key("timestamp") || !col_names.contains_key("depth") || !col_names.contains_key("velocity") {
+        if !col_names.contains_key("timestamp")
+            || !col_names.contains_key("depth")
+            || !col_names.contains_key("velocity")
+        {
             return Err("col_names must contain 'timestamp', 'depth', and 'velocity' keys".into());
         }
 
@@ -278,30 +331,47 @@ impl FDVFlowCreator {
                     self.set_pipe_dia(pipe_size);
                 }
                 Box::new(CircularCalculator::new(pipe_size / 2.0)?)
-            },
+            }
             "Rectangular" => {
                 let pipe_size = pipe_size_param.parse::<f64>()? / 1000.0;
                 if pipe_size > 0.0 {
                     self.set_pipe_dia(pipe_size);
                 }
                 Box::new(RectangularCalculator::new(pipe_size)?)
-            },
+            }
             "Egg Type 1" => {
-                let egg_params: Vec<f64> = pipe_size_param.split(',').map(|s| s.parse::<f64>().unwrap()).collect();
-                Box::new(Egg1Calculator::new(egg_params[0], egg_params[1], egg_params[2])?)
-            },
+                let egg_params: Vec<f64> = pipe_size_param
+                    .split(',')
+                    .map(|s| s.parse::<f64>().unwrap())
+                    .collect();
+                Box::new(Egg1Calculator::new(
+                    egg_params[0],
+                    egg_params[1],
+                    egg_params[2],
+                )?)
+            }
             "Egg Type 2a" => {
-                let egg_params: Vec<f64> = pipe_size_param.split(',').map(|s| s.parse::<f64>().unwrap()).collect();
-                Box::new(Egg2ACalculator::new(egg_params[0], egg_params[1], egg_params[2])?)
-            },
+                let egg_params: Vec<f64> = pipe_size_param
+                    .split(',')
+                    .map(|s| s.parse::<f64>().unwrap())
+                    .collect();
+                Box::new(Egg2ACalculator::new(
+                    egg_params[0],
+                    egg_params[1],
+                    egg_params[2],
+                )?)
+            }
             "Egg Type 2" => {
                 let egg_height = pipe_size_param.parse::<f64>()?;
                 Box::new(Egg2Calculator::new(egg_height)?)
-            },
+            }
             "Two Circles and a Rectangle" => {
-                let params: Vec<f64> = pipe_size_param.split(',').map(|s| s.parse::<f64>().unwrap()).collect();
+                let params: Vec<f64> = pipe_size_param
+                    .split(',')
+                    .map(|s| s.parse::<f64>().unwrap())
+                    .collect();
                 Box::new(TwoCircleAndRectangleCalculator::new(params[1], params[0])?)
-            },
+            }
             _ => return Err(format!("Unsupported pipe type: {}", pipe_type).into()),
         };
 
@@ -312,16 +382,26 @@ impl FDVFlowCreator {
 
     pub fn create_fdv_flow(&mut self) -> Result<(), FDVFlowCreatorError> {
         // Validate parameters
-        self.validate_parameters().map_err(|e| FDVFlowCreatorError::InvalidParameter(e.to_string()))?;
+        self.validate_parameters()
+            .map_err(|e| FDVFlowCreatorError::InvalidParameter(e.to_string()))?;
 
         // Write header
         self.write_header()?;
 
         // Process data
         let col_names = HashMap::from([
-            ("timestamp".to_string(), self.timestamp_col.clone().unwrap_or_default()),
-            ("depth".to_string(), self.depth_col.clone().unwrap_or_default()),
-            ("velocity".to_string(), self.velocity_col.clone().unwrap_or_default()),
+            (
+                "timestamp".to_string(),
+                self.timestamp_col.clone().unwrap_or_default(),
+            ),
+            (
+                "depth".to_string(),
+                self.depth_col.clone().unwrap_or_default(),
+            ),
+            (
+                "velocity".to_string(),
+                self.velocity_col.clone().unwrap_or_default(),
+            ),
         ]);
         self.process_data(col_names)?;
 
@@ -330,7 +410,11 @@ impl FDVFlowCreator {
 
         // Log success and null readings
         let (depth_null, velocity_null) = self.get_null_readings();
-        log::info!("FDV flow creation completed successfully. Null readings: Depth: {}, Velocity: {}", depth_null, velocity_null);
+        log::info!(
+            "FDV flow creation completed successfully. Null readings: Depth: {}, Velocity: {}",
+            depth_null,
+            velocity_null
+        );
 
         Ok(())
     }

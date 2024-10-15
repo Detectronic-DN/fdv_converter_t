@@ -1,29 +1,33 @@
-use std::option::Option;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::time::Instant;
-use chrono::Duration;
-use polars::prelude::*;
-use serde_json::{json, Value};
 use crate::backend::batch_processing::BatchProcessor;
 use crate::backend::file_processor::{FileProcessor, ProcessedFileData};
-use crate::utils::logger::clear_logs;
+use crate::backend::interim_reports::InterimReportGenerator;
+use crate::calculations::r3_calculator::r3_calculator;
 use crate::fdv::fdv_creator::FDVFlowCreator;
 use crate::fdv::rainfall_creator::FDVRainfallCreator;
-use crate::calculations::r3_calculator::r3_calculator;
+use crate::utils::logger::clear_logs;
+use chrono::Duration;
+use polars::prelude::*;
+use rust_xlsxwriter::{Workbook, Worksheet};
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::error::Error;
+use std::option::Option;
+use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 pub struct CommandHandler {
     filepath: PathBuf,
     site_id: String,
     site_name: String,
-    data_frame: Option<DataFrame>,
+    pub(crate) data_frame: Option<DataFrame>,
     start_timestamp: String,
     end_timestamp: String,
-    column_mapping: HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
-    monitor_type: String,
-    interval: Duration,
+    pub(crate) column_mapping:
+        HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
+    pub(crate) monitor_type: String,
+    pub(crate) interval: Duration,
     gaps: usize,
-    time_col: Option<String>,
+    pub(crate) time_col: Option<String>,
 }
 
 impl CommandHandler {
@@ -65,12 +69,11 @@ impl CommandHandler {
 
                 log::info!("File processed successfully.");
                 log::info!("Gaps: {}", self.gaps);
-                log::info!("Range: {} to {}",self.start_timestamp, self.end_timestamp);
+                log::info!("Range: {} to {}", self.start_timestamp, self.end_timestamp);
                 log::info!("Monitor type: {}", self.monitor_type);
 
-
                 Ok(result.to_string())
-            },
+            }
             Err(e) => {
                 let error_message = format!("Error processing file: {}", e);
                 log::error!("{}", error_message);
@@ -89,8 +92,11 @@ impl CommandHandler {
         Ok(dt.format("%Y-%m-%d %H:%M:%S").to_string())
     }
 
-    pub fn update_timestamps(&mut self, start_time: &str, end_time: &str) -> Result<String, String> {
-
+    pub fn update_timestamps(
+        &mut self,
+        start_time: &str,
+        end_time: &str,
+    ) -> Result<String, String> {
         let formatted_start = self.format_timestamp(start_time)?;
         let formatted_end = self.format_timestamp(end_time)?;
 
@@ -115,9 +121,13 @@ impl CommandHandler {
                     "rowCount": updated_data.row_count,
                 });
 
-                log::info!("Timestamps updated. New range: {} to {}", formatted_start, formatted_end);
+                log::info!(
+                    "Timestamps updated. New range: {} to {}",
+                    formatted_start,
+                    formatted_end
+                );
                 Ok(result.to_string())
-            },
+            }
             Err(e) => {
                 let error_message = format!("Error updating timestamps: {}", e);
                 log::error!("{}", error_message);
@@ -136,7 +146,9 @@ impl CommandHandler {
         self.monitor_type = processed_data.monitor_type;
         self.interval = processed_data.interval;
         self.gaps = processed_data.gaps_filled;
-        self.time_col = self.column_mapping.get("timestamp")
+        self.time_col = self
+            .column_mapping
+            .get("timestamp")
             .and_then(|v| v.first())
             .map(|(name, _, _, _)| name.clone());
     }
@@ -182,23 +194,29 @@ impl CommandHandler {
 
         // Set up column names
         let mut col_names = HashMap::new();
-        col_names.insert("timestamp".to_string(), self.time_col.clone().unwrap_or_default());
+        col_names.insert(
+            "timestamp".to_string(),
+            self.time_col.clone().unwrap_or_default(),
+        );
         col_names.insert("depth".to_string(), depth_col.to_string());
         col_names.insert("velocity".to_string(), velocity_col.to_string());
 
-        fdv_creator.set_parameters(
-            df.clone(),
-            &self.site_name,
-            &self.start_timestamp,
-            &self.end_timestamp,
-            self.interval.num_minutes(),
-            output_path,
-            &col_names,
-            pipe_shape,
-            pipe_size,
-        ).map_err(|e| format!("Error setting FDV flow parameters: {}", e))?;
+        fdv_creator
+            .set_parameters(
+                df.clone(),
+                &self.site_name,
+                &self.start_timestamp,
+                &self.end_timestamp,
+                self.interval.num_minutes(),
+                output_path,
+                &col_names,
+                pipe_shape,
+                pipe_size,
+            )
+            .map_err(|e| format!("Error setting FDV flow parameters: {}", e))?;
 
-        fdv_creator.create_fdv_flow()
+        fdv_creator
+            .create_fdv_flow()
             .map_err(|e| format!("Error creating FDV flow: {}", e))?;
 
         let (depth_null, velocity_null) = fdv_creator.get_null_readings();
@@ -218,7 +236,11 @@ impl CommandHandler {
         });
 
         log::info!("FDV flow created successfully. Output: {}", output_path);
-        log::info!("Null readings: Depth: {}, Velocity: {}", depth_null, velocity_null);
+        log::info!(
+            "Null readings: Depth: {}, Velocity: {}",
+            depth_null,
+            velocity_null
+        );
 
         Ok(result.to_string())
     }
@@ -226,26 +248,32 @@ impl CommandHandler {
     pub fn create_rainfall(
         &mut self,
         output_path: &str,
-        rainfall_col: &str
+        rainfall_col: &str,
     ) -> Result<String, String> {
         let df = self.data_frame.as_ref().ok_or("No data frame available")?;
         let mut rainfall_creator = FDVRainfallCreator::new();
         let mut col_names = HashMap::new();
-        col_names.insert("timestamp".to_string(), self.time_col.clone().unwrap_or_default());
+        col_names.insert(
+            "timestamp".to_string(),
+            self.time_col.clone().unwrap_or_default(),
+        );
         col_names.insert("rainfall".to_string(), rainfall_col.to_string());
 
-        rainfall_creator.set_parameters(
-            df.clone(),
-            &self.site_name,
-            &self.start_timestamp,
-            &self.end_timestamp,
-            self.interval.num_minutes(),
-            output_path,
-            &col_names
-        ).map_err(|e| format!("Error setting Rainfall parameter: {}", e))?;
+        rainfall_creator
+            .set_parameters(
+                df.clone(),
+                &self.site_name,
+                &self.start_timestamp,
+                &self.end_timestamp,
+                self.interval.num_minutes(),
+                output_path,
+                &col_names,
+            )
+            .map_err(|e| format!("Error setting Rainfall parameter: {}", e))?;
 
-        rainfall_creator.create_fdv_rainfall()
-        .map_err(|e| format!("Error creating FDV flow: {}", e))?;
+        rainfall_creator
+            .create_fdv_rainfall()
+            .map_err(|e| format!("Error creating FDV flow: {}", e))?;
 
         let null_readings = rainfall_creator.get_null_readings();
 
@@ -276,7 +304,7 @@ impl CommandHandler {
             Ok(r3_value) => {
                 log::info!("R3 value calculated successfully: {}", r3_value);
                 r3_value
-            },
+            }
             Err(e) => {
                 log::error!("Error calculating R3 value: {:?}", e);
                 -1.0
@@ -284,7 +312,11 @@ impl CommandHandler {
         }
     }
 
-    pub fn run_batch_process(&self, file_infos: Vec<Value>, output_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_batch_process(
+        &self,
+        file_infos: Vec<Value>,
+        output_dir: &Path,
+    ) -> Result<(), Box<dyn Error>> {
         let mut batch_processor = BatchProcessor::new();
         let start_time = Instant::now();
 
@@ -293,9 +325,12 @@ impl CommandHandler {
         match batch_processor.process_convert_and_zip(file_infos, output_dir) {
             Ok(zip_path) => {
                 let duration = start_time.elapsed();
-                log::info!("Batch processing and zipping completed successfully in {:?}.", duration);
+                log::info!(
+                    "Batch processing and zipping completed successfully in {:?}.",
+                    duration
+                );
                 log::info!("Output zip file: {:?}", zip_path);
-            },
+            }
             Err(e) => {
                 log::error!("Error during processing, conversion, or zipping: {}", e);
                 return Err(Box::new(e));
@@ -304,5 +339,119 @@ impl CommandHandler {
 
         Ok(())
     }
+    pub fn generate_interim_reports(
+        &self,
+    ) -> Result<(DataFrame, DataFrame, DataFrame), Box<dyn Error>> {
+        let mut interim_report_generator = InterimReportGenerator::new(self).unwrap();
+        interim_report_generator.generate_report()
+    }
 
+    pub fn generate_rainfall_totals(&self) -> Result<(DataFrame, DataFrame), Box<dyn Error>> {
+        let interim_report_generator = InterimReportGenerator::new(self).unwrap();
+        interim_report_generator.generate_rainfall_totals()
+    }
+
+    fn write_df_to_worksheet(
+        df: &DataFrame,
+        worksheet: &mut Worksheet,
+    ) -> Result<(), Box<dyn Error>> {
+        // Write headers
+        for (col, name) in df.get_column_names().iter().enumerate() {
+            worksheet.write_string(0, col as u16, &name.to_string())?;
+        }
+
+        // Write data
+        for (row, series) in df.iter().enumerate() {
+            for (col, value) in series.iter().enumerate() {
+                match value {
+                    AnyValue::Float64(f) => {
+                        worksheet.write_number(row as u32 + 1, col as u16, f)?
+                    }
+                    AnyValue::Float32(f) => {
+                        worksheet.write_number(row as u32 + 1, col as u16, f as f64)?
+                    }
+                    AnyValue::Int64(i) => {
+                        worksheet.write_number(row as u32 + 1, col as u16, i as i32)?
+                    }
+                    AnyValue::Int32(i) => worksheet.write_number(row as u32 + 1, col as u16, i)?,
+                    AnyValue::UInt64(u) => {
+                        worksheet.write_number(row as u32 + 1, col as u16, u as u32)?
+                    }
+                    AnyValue::UInt32(u) => worksheet.write_number(row as u32 + 1, col as u16, u)?,
+                    AnyValue::Int16(i) => worksheet.write_number(row as u32 + 1, col as u16, i)?,
+                    AnyValue::UInt16(u) => worksheet.write_number(row as u32 + 1, col as u16, u)?,
+                    AnyValue::Int8(i) => worksheet.write_number(row as u32 + 1, col as u16, i)?,
+                    AnyValue::UInt8(u) => worksheet.write_number(row as u32 + 1, col as u16, u)?,
+                    AnyValue::String(s) => worksheet.write_string(row as u32 + 1, col as u16, s)?,
+                    AnyValue::Null => worksheet.write_string(row as u32 + 1, col as u16, "")?,
+                    _ => worksheet.write_string(row as u32 + 1, col as u16, &value.to_string())?,
+                };
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn save_interim_reports_to_excel(&self, file_path: &str) -> Result<(), Box<dyn Error>> {
+        // Create a new workbook
+        let mut workbook = Workbook::new();
+
+        // Generate interim reports
+        let (summaries, complete_data, daily_summary) = self.generate_interim_reports()?;
+
+        // Write each DataFrame to a separate worksheet
+        let mut worksheet = workbook.add_worksheet();
+        worksheet.set_name("Summaries")?;
+        Self::write_df_to_worksheet(&summaries, &mut worksheet)?;
+
+        let mut worksheet = workbook.add_worksheet();
+        worksheet.set_name("Complete Data")?;
+        Self::write_df_to_worksheet(&complete_data, &mut worksheet)?;
+
+        let mut worksheet = workbook.add_worksheet();
+        worksheet.set_name("Daily Summary")?;
+        Self::write_df_to_worksheet(&daily_summary, &mut worksheet)?;
+
+        // Save the workbook
+        workbook.save(file_path)?;
+
+        log::info!(
+            "Interim reports Excel file saved successfully: {}",
+            file_path
+        );
+        Ok(())
+    }
+
+    pub fn save_rainfall_totals_to_excel(&self, file_path: &str) -> Result<(), Box<dyn Error>> {
+        if self.monitor_type != "Rainfall" {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Rainfall totals are only available for Rainfall monitor type",
+            )));
+        }
+
+        // Create a new workbook
+        let mut workbook = Workbook::new();
+
+        // Generate rainfall totals
+        let (daily_totals, weekly_totals) = self.generate_rainfall_totals()?;
+
+        // Write each DataFrame to a separate worksheet
+        let mut worksheet = workbook.add_worksheet();
+        worksheet.set_name("Daily Rainfall Totals")?;
+        Self::write_df_to_worksheet(&daily_totals, &mut worksheet)?;
+
+        let mut worksheet = workbook.add_worksheet();
+        worksheet.set_name("Weekly Rainfall Totals")?;
+        Self::write_df_to_worksheet(&weekly_totals, &mut worksheet)?;
+
+        // Save the workbook
+        workbook.save(file_path)?;
+
+        log::info!(
+            "Rainfall totals Excel file saved successfully: {}",
+            file_path
+        );
+        Ok(())
+    }
 }
