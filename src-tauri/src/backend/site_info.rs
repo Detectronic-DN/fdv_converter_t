@@ -22,7 +22,7 @@ impl SiteInfo {
     pub fn extract_site_info(
         &mut self,
         filename: &str,
-        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
+        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>
     ) -> Result<(), Box<dyn Error>> {
         self.extract_from_filename(filename)?;
         if self.site_id == "Unknown" {
@@ -55,7 +55,7 @@ impl SiteInfo {
 
     pub(crate) fn extract_from_column_mapping(
         &mut self,
-        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
+        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>
     ) {
         for (_, columns) in column_mapping {
             for (_, _, site_id, _) in columns {
@@ -71,7 +71,7 @@ impl SiteInfo {
     pub(crate) fn determine_monitor_type(
         &mut self,
         filename: &str,
-        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
+        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>
     ) {
         let filename_lower = filename.to_lowercase();
         if filename_lower.contains("dm") || filename_lower.contains("depth") {
@@ -87,12 +87,13 @@ impl SiteInfo {
 
     fn determine_monitor_type_from_columns(
         &mut self,
-        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>,
+        column_mapping: &HashMap<String, Vec<(String, usize, Option<String>, Option<String>)>>
     ) {
         if column_mapping.contains_key("rainfall") {
             self.monitor_type = String::from("Rainfall");
-        } else if column_mapping.contains_key("flow")
-            || (column_mapping.contains_key("depth") && column_mapping.contains_key("velocity"))
+        } else if
+            column_mapping.contains_key("flow") ||
+            (column_mapping.contains_key("depth") && column_mapping.contains_key("velocity"))
         {
             self.monitor_type = String::from("Flow");
         } else if column_mapping.contains_key("depth") {

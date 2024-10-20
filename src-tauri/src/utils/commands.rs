@@ -15,8 +15,7 @@ pub fn greet(name: &str) -> String {
 
 #[tauri::command]
 pub async fn process_file(state: State<'_, AppState>, file_path: String) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     command_handler.process_file(&file_path)
@@ -26,10 +25,9 @@ pub async fn process_file(state: State<'_, AppState>, file_path: String) -> Resu
 pub async fn update_timestamps(
     state: State<'_, AppState>,
     start_time: String,
-    end_time: String,
+    end_time: String
 ) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     command_handler.update_timestamps(&start_time, &end_time)
@@ -37,8 +35,7 @@ pub async fn update_timestamps(
 
 #[tauri::command]
 pub fn clear_command_handler_state(state: State<'_, AppState>) -> Result<(), String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     command_handler.reset();
@@ -48,8 +45,7 @@ pub fn clear_command_handler_state(state: State<'_, AppState>) -> Result<(), Str
 
 #[tauri::command]
 pub async fn update_site_id(state: State<'_, AppState>, site_id: String) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     command_handler.update_site_id(site_id)
@@ -58,10 +54,9 @@ pub async fn update_site_id(state: State<'_, AppState>, site_id: String) -> Resu
 #[tauri::command]
 pub async fn update_site_name(
     state: State<'_, AppState>,
-    site_name: String,
+    site_name: String
 ) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     command_handler.update_site_name(site_name)
@@ -78,12 +73,11 @@ pub fn create_fdv_flow(
     state: State<'_, AppState>,
     output_path: String,
     depth_col: String,
-    velocity_col: String,
+    velocity_col: Option<String>,
     pipe_shape: String,
-    pipe_size: String,
+    pipe_size: String
 ) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
 
@@ -91,9 +85,9 @@ pub fn create_fdv_flow(
     command_handler.create_fdv_flow(
         &output_path,
         &depth_col,
-        &velocity_col,
+        &velocity_col.as_deref(),
         &pipe_shape,
-        &pipe_size,
+        &pipe_size
     )
 }
 
@@ -101,10 +95,9 @@ pub fn create_fdv_flow(
 pub fn create_rainfall(
     state: State<'_, AppState>,
     output_path: String,
-    rainfall_col: String,
+    rainfall_col: String
 ) -> Result<String, String> {
-    let mut command_handler = state
-        .command_handler
+    let mut command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
 
@@ -116,10 +109,9 @@ pub fn calculate_r3(
     state: State<'_, AppState>,
     width: f64,
     height: f64,
-    egg_form: String,
+    egg_form: String
 ) -> Result<String, String> {
-    let command_handler = state
-        .command_handler
+    let command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
 
@@ -136,10 +128,9 @@ pub fn calculate_r3(
 pub async fn run_batch_process(
     state: State<'_, AppState>,
     file_infos: Vec<Value>,
-    output_dir: String,
+    output_dir: String
 ) -> Result<String, String> {
-    let command_handler = state
-        .command_handler
+    let command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
     let output_path = Path::new(&output_dir);
@@ -153,18 +144,14 @@ pub async fn run_batch_process(
 #[tauri::command]
 pub async fn generate_interim_reports(
     state: State<'_, AppState>,
-    output_path: String,
+    output_path: String
 ) -> Result<String, String> {
-    let command_handler = state
-        .command_handler
+    let command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
 
     match command_handler.save_interim_reports_to_excel(&output_path) {
-        Ok(()) => Ok(format!(
-            "Interim reports saved successfully to {}",
-            output_path
-        )),
+        Ok(()) => Ok(format!("Interim reports saved successfully to {}", output_path)),
         Err(e) => Err(format!("Error generating interim reports: {}", e)),
     }
 }
@@ -172,18 +159,14 @@ pub async fn generate_interim_reports(
 #[tauri::command]
 pub async fn generate_rainfall_totals(
     state: State<'_, AppState>,
-    output_path: String,
+    output_path: String
 ) -> Result<String, String> {
-    let command_handler = state
-        .command_handler
+    let command_handler = state.command_handler
         .lock()
         .map_err(|_| "Failed to acquire lock on CommandHandler".to_string())?;
 
     match command_handler.save_rainfall_totals_to_excel(&output_path) {
-        Ok(()) => Ok(format!(
-            "Rainfall totals saved successfully to {}",
-            output_path
-        )),
+        Ok(()) => Ok(format!("Rainfall totals saved successfully to {}", output_path)),
         Err(e) => Err(format!("Error generating rainfall totals: {}", e)),
     }
 }

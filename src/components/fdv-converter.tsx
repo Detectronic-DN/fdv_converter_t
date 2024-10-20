@@ -149,7 +149,7 @@ export const FdvConverter: React.FC = () => {
       }
 
       const fileName =
-          selected.split("\\").pop() || selected.split("/").pop() || selected;
+        selected.split("\\").pop() || selected.split("/").pop() || selected;
       setSelectedFile({ name: fileName, path: selected });
       setError(null);
 
@@ -157,7 +157,7 @@ export const FdvConverter: React.FC = () => {
       await handleProcessFile(selected);
     } catch (error) {
       setError(
-          `Error selecting file: ${error instanceof Error ? error.message : String(error)}`
+        `Error selecting file: ${error instanceof Error ? error.message : String(error)}`
       );
       setSelectedFile(null);
     } finally {
@@ -186,7 +186,7 @@ export const FdvConverter: React.FC = () => {
       }));
     } catch (error) {
       setError(
-          `Error processing file: ${error instanceof Error ? error.message : String(error)}`
+        `Error processing file: ${error instanceof Error ? error.message : String(error)}`
       );
     } finally {
       setIsProcessing(false);
@@ -340,7 +340,7 @@ export const FdvConverter: React.FC = () => {
   const handleUpdateUsername = useCallback((newUsername: string) => {
     setUsername(newUsername);
   }, []);
-//todo:: set the username permanently
+  //todo:: set the username permanently
 
 
 
@@ -532,7 +532,7 @@ export const FdvConverter: React.FC = () => {
       setError("No files selected for batch processing.");
       return;
     }
-    
+
     try {
       setBatchProcessing(true);
       setIsLoading(true);
@@ -577,14 +577,12 @@ export const FdvConverter: React.FC = () => {
       siteDetails.startTimestamp !== "" &&
       siteDetails.endTimestamp !== "" &&
       selectedFile !== null &&
-      depthColumn !== "" &&
-      pipeShape !== ""
+      depthColumn !== ""
     );
   }, [
     siteDetails,
     selectedFile,
     depthColumn,
-    pipeShape,
   ]);
 
   return (
@@ -629,9 +627,9 @@ export const FdvConverter: React.FC = () => {
             aria-label="Selected file"
           />
           <Button
-              className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-semibold py-2 px-4 rounded-t-md shadow-md transition-all duration-300 ease-in-out flex items-center space-x-2"
-              onClick={handleFileChange}
-              disabled={isProcessing}
+            className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-semibold py-2 px-4 rounded-t-md shadow-md transition-all duration-300 ease-in-out flex items-center space-x-2"
+            onClick={handleFileChange}
+            disabled={isProcessing}
           >
             <FileSpreadsheet className="w-5 h-5" />
             <span>Upload File</span>
@@ -653,52 +651,52 @@ export const FdvConverter: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <Input
-                  placeholder="Site ID"
-                  value={siteDetails.siteId}
-                  onChange={(e) =>
-                      setSiteDetails((prev) => ({...prev, siteId: e.target.value}))
-                  }
-                  onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteId)}
-                  aria-label="Site ID"
+                placeholder="Site ID"
+                value={siteDetails.siteId}
+                onChange={(e) =>
+                  setSiteDetails((prev) => ({ ...prev, siteId: e.target.value }))
+                }
+                onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteId)}
+                aria-label="Site ID"
               />
               <Input
-                  placeholder="Site Name"
-                  value={siteDetails.siteName}
-                  onChange={(e) =>
-                      setSiteDetails((prev) => ({
-                        ...prev,
-                        siteName: e.target.value,
-                      }))
-                  }
-                  onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteName)}
-                  aria-label="Site Name"
+                placeholder="Site Name"
+                value={siteDetails.siteName}
+                onChange={(e) =>
+                  setSiteDetails((prev) => ({
+                    ...prev,
+                    siteName: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => handleKeyPress(e, handleUpdateSiteName)}
+                aria-label="Site Name"
               />
               <Input
-                  type="datetime-local"
-                  placeholder="Start Timestamp"
-                  value={siteDetails.startTimestamp}
-                  onChange={(e) =>
-                      handleUpdateSiteDetails("startTimestamp", e.target.value)
-                  }
-                  aria-label="Start Timestamp"
+                type="datetime-local"
+                placeholder="Start Timestamp"
+                value={siteDetails.startTimestamp}
+                onChange={(e) =>
+                  handleUpdateSiteDetails("startTimestamp", e.target.value)
+                }
+                aria-label="Start Timestamp"
               />
               <Input
-                  type="datetime-local"
-                  placeholder="End Timestamp"
-                  value={siteDetails.endTimestamp}
-                  onChange={(e) =>
-                      handleUpdateSiteDetails("endTimestamp", e.target.value)
-                  }
-                  aria-label="End Timestamp"
+                type="datetime-local"
+                placeholder="End Timestamp"
+                value={siteDetails.endTimestamp}
+                onChange={(e) =>
+                  handleUpdateSiteDetails("endTimestamp", e.target.value)
+                }
+                aria-label="End Timestamp"
               />
             </div>
             <div className="flex justify-end mt-4">
               <Button
-                  className="bg-[#f44336] hover:bg-[#d32f2f] text-white font-semibold py-2 px-4 rounded-full shadow-md transition-all duration-300 ease-in-out flex items-center space-x-2"
-                  onClick={handleUpdateTimestamps}
-                  disabled={isProcessing || !processedData}
+                className="bg-[#f44336] hover:bg-[#d32f2f] text-white font-semibold py-2 px-4 rounded-full shadow-md transition-all duration-300 ease-in-out flex items-center space-x-2"
+                onClick={handleUpdateTimestamps}
+                disabled={isProcessing || !processedData}
               >
-                <CalendarCog className="w-5 h-5"/>
+                <CalendarCog className="w-5 h-5" />
                 <span>
                   {isProcessing ? "Updating..." : "Update Timestamps"}
                 </span>
@@ -761,17 +759,17 @@ export const FdvConverter: React.FC = () => {
                 aria-label="Pipe Size"
               />
               <Button
-                  className="col-span-1 bg-gradient-to-r from-indigo-700 to-indigo-900 hover:from-indigo-800 hover:to-indigo-950 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
-                  onClick={handleInterimReports}
-                  disabled={!processedData || isLoading}
+                className="col-span-1 bg-gradient-to-r from-indigo-700 to-indigo-900 hover:from-indigo-800 hover:to-indigo-950 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
+                onClick={handleInterimReports}
+                disabled={!processedData || isLoading}
               >
                 <FileText className="w-5 h-5" />
                 <span>Interim Reports</span>
               </Button>
               <Button
-                  className="col-span-1 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out"
-                  disabled={!isFormValid}
-                  onClick={handleCreateFdv}
+                className="col-span-1 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out"
+                disabled={!isFormValid}
+                onClick={handleCreateFdv}
               >
                 Create FDV
               </Button>
@@ -781,31 +779,31 @@ export const FdvConverter: React.FC = () => {
             <div className="grid grid-cols-1 gap-4 mt-4">
               <Select value={rainfallColumn} onValueChange={setRainfallColumn}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select rainfall column"/>
+                  <SelectValue placeholder="Select rainfall column" />
                 </SelectTrigger>
                 <SelectContent>
                   {allColumns.map(([columnName, index]) => (
-                      <SelectItem key={`${columnName}-${index}`} value={columnName}>
-                        {columnName}
-                      </SelectItem>
+                    <SelectItem key={`${columnName}-${index}`} value={columnName}>
+                      {columnName}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <div className="flex justify-between space-x-4">
                 <Button
-                    className="flex-1 bg-gradient-to-r from-indigo-700 to-indigo-900 hover:from-indigo-800 hover:to-indigo-950 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
-                    onClick={handleGenerateRainfallTotals}
-                    disabled={isLoading || !processedData || processedData.monitorType !== "Rainfall"}
+                  className="flex-1 bg-gradient-to-r from-indigo-700 to-indigo-900 hover:from-indigo-800 hover:to-indigo-950 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
+                  onClick={handleGenerateRainfallTotals}
+                  disabled={isLoading || !processedData || processedData.monitorType !== "Rainfall"}
                 >
-                  <FileText className="w-5 h-5"/>
+                  <FileText className="w-5 h-5" />
                   <span>Rainfall Totals</span>
                 </Button>
                 <Button
-                    className="flex-1 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
-                    onClick={handleCreateRainfall}
-                    disabled={isProcessing || !rainfallColumn}
+                  className="flex-1 bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 ease-in-out flex items-center justify-center space-x-2"
+                  onClick={handleCreateRainfall}
+                  disabled={isProcessing || !rainfallColumn}
                 >
-                  <CloudRain className="w-5 h-5"/>
+                  <CloudRain className="w-5 h-5" />
                   <span>Create Rainfall</span>
                 </Button>
               </div>
@@ -820,7 +818,7 @@ export const FdvConverter: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Select value={eggType} onValueChange={setEggType}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Egg Type"/>
+                      <SelectValue placeholder="Egg Type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Egg Type 1">Egg Type 1</SelectItem>
@@ -828,16 +826,16 @@ export const FdvConverter: React.FC = () => {
                     </SelectContent>
                   </Select>
                   <Input
-                      type="number"
-                      placeholder="Pipe Width (mm)"
-                      value={pipeWidth}
-                      onChange={(e) => setPipeWidth(e.target.value)}
+                    type="number"
+                    placeholder="Pipe Width (mm)"
+                    value={pipeWidth}
+                    onChange={(e) => setPipeWidth(e.target.value)}
                   />
                   <Input
-                      type="number"
-                      placeholder="Pipe Height (mm)"
-                      value={pipeHeight}
-                      onChange={(e) => setPipeHeight(e.target.value)}
+                    type="number"
+                    placeholder="Pipe Height (mm)"
+                    value={pipeHeight}
+                    onChange={(e) => setPipeHeight(e.target.value)}
                   />
                   <Input
                     type="text"
@@ -846,17 +844,17 @@ export const FdvConverter: React.FC = () => {
                     readOnly
                   />
                   <Button
-                      onClick={handleCalculateR3}
-                      className="col-span-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
-                      disabled={isLoading}
+                    onClick={handleCalculateR3}
+                    className="col-span-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
+                    disabled={isLoading}
                   >
                     <Calculator className="w-5 h-5" />
                     <span>Calculate R3</span>
                   </Button>
                   <Button
-                      onClick={handleUseR3}
-                      className="col-span-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
-                      disabled={!r3Value}
+                    onClick={handleUseR3}
+                    className="col-span-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
+                    disabled={!r3Value}
                   >
                     <ArrowRight className="w-5 h-5" />
                     <span>Use R3 value</span>
@@ -877,28 +875,28 @@ export const FdvConverter: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Button
-                        onClick={handleBatchFileChange}
-                        disabled={batchProcessing}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
+                      onClick={handleBatchFileChange}
+                      disabled={batchProcessing}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
                     >
                       <FolderPlus className="w-5 h-5" />
                       <span>Add Files</span>
                     </Button>
                     <Button
-                        onClick={handleBatchProcess}
-                        disabled={batchProcessing || batchFiles.length === 0}
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
+                      onClick={handleBatchProcess}
+                      disabled={batchProcessing || batchFiles.length === 0}
+                      className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center space-x-2"
                     >
                       {batchProcessing ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Processing...</span>
-                          </>
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Processing...</span>
+                        </>
                       ) : (
-                          <>
-                            <Play className="w-5 h-5" />
-                            <span>Process Files</span>
-                          </>
+                        <>
+                          <Play className="w-5 h-5" />
+                          <span>Process Files</span>
+                        </>
                       )}
                     </Button>
                   </div>
@@ -951,13 +949,13 @@ export const FdvConverter: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div
-                ref={logContainerRef}
-                className="h-40 bg-muted rounded-md p-2 overflow-auto"
+              ref={logContainerRef}
+              className="h-40 bg-muted rounded-md p-2 overflow-auto"
             >
               {logs.map((log, index) => (
-                  <div key={index} className={`${getLogColor(log.level)}`}>
-                    {log.message}
-                  </div>
+                <div key={index} className={`${getLogColor(log.level)}`}>
+                  {log.message}
+                </div>
               ))}
             </div>
           </CardContent>
