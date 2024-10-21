@@ -172,7 +172,7 @@ impl FDVRainfallCreator {
     }
 
     fn insert_value(&mut self, sample_value: f64) -> io::Result<()> {
-        let mut sample = sample_value;
+        let mut sample = if sample_value.is_nan() { 0.0 } else { sample_value };
         if sample > 1.0e-5 {
             let mut count = 0;
             let mut offs = self.output_buffer.len() as i32 - 1;
@@ -225,17 +225,17 @@ impl FDVRainfallCreator {
             FDVRainfallCreatorError::InvalidParameter("DataFrame not set".to_string())
         })?;
 
-        self.null_readings = df.column(rainfall_col)?.null_count();
+
 
         let rainfall_series = df.column(rainfall_col)?.clone();
-        let rainfall_values: Vec<f64> = rainfall_series
-            .f64()?
-            .into_iter()
-            .map(|v| v.unwrap_or(0.0))
-            .collect();
+        self.null_readings = df.column(rainfall_col)?.null_count();
+        let rainfall_values: Vec<Option<f64>> = rainfall_series.f64()?.into_iter().collect();
 
         for value in rainfall_values {
-            self.insert_value(value)?;
+            match value {
+                Some(v) => self.insert_value(v)?,
+                None => self.insert_value(0.0)?,
+            }
         }
 
         self.drain_output_buffer(0)?;

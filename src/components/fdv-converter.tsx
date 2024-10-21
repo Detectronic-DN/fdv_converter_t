@@ -116,7 +116,7 @@ export const FdvConverter: React.FC = () => {
     setError(null);
     setDepthColumn("");
     setVelocityColumn("");
-    setPipeShape("");
+    setPipeShape("Circular");
     setPipeSize("");
     setProcessedData(null);
     setLogs([]);
@@ -130,7 +130,7 @@ export const FdvConverter: React.FC = () => {
         filters: [
           {
             name: "Spreadsheet",
-            extensions: ["xlsx", "xls", "csv"],
+            extensions: ["xlsx", "csv"],
           },
         ],
       });

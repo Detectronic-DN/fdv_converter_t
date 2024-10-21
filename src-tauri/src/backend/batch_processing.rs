@@ -132,7 +132,7 @@ impl BatchProcessor {
                 BatchProcessingError::FileProcessingError("Site name not found".to_string())
             })?;
 
-        let file_extension = if monitor_type == "rainfall" { "r" } else { "fdv" };
+        let file_extension = if monitor_type == "Rainfall" { "r" } else { "fdv" };
         let output_filename = format!("{}.{}", site_name, file_extension);
         let output_path = output_dir.join(output_filename);
 
